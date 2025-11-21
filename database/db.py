@@ -216,6 +216,66 @@ def init_db():
         c.execute('''INSERT OR IGNORE INTO categorias (nombre, tipo, color, icono)
                      VALUES (?, ?, ?, ?)''', categoria)
 
+    # Insertar datos de demostración si la base de datos está vacía
+    c.execute('SELECT COUNT(*) FROM ingresos')
+    if c.fetchone()[0] == 0:
+        print("[INFO] Insertando datos de demostración...")
+
+        # Balance inicial
+        c.execute('UPDATE configuracion SET balance_inicial=25000.0, primera_vez=0 WHERE id=1')
+
+        # Ingresos recurrentes (nómina quincenal)
+        c.execute('''INSERT INTO ingresos_recurrentes
+                    (nombre, monto, dia_pago, fecha_inicio, fecha_fin, frecuencia, activo)
+                    VALUES (?, ?, ?, ?, ?, ?, 1)''',
+                 ('Nómina Quincenal 1', 12500.00, 10, '2025-01-01', '2099-12-31', 'mensual'))
+
+        c.execute('''INSERT INTO ingresos_recurrentes
+                    (nombre, monto, dia_pago, fecha_inicio, fecha_fin, frecuencia, activo)
+                    VALUES (?, ?, ?, ?, ?, ?, 1)''',
+                 ('Nómina Quincenal 2', 12500.00, 25, '2025-01-01', '2099-12-31', 'mensual'))
+
+        # Préstamos
+        c.execute('''INSERT INTO prestamos
+                    (nombre, monto_mensual, dia_pago, fecha_inicio, fecha_fin, activo)
+                    VALUES (?, ?, ?, ?, ?, 1)''',
+                 ('Préstamo Personal', 3500.00, 15, '2025-01-01', '2026-12-31'))
+
+        # Tarjetas de crédito
+        c.execute('''INSERT INTO tarjetas_credito
+                    (nombre, fecha_corte, fecha_pago_estimada, limite_credito, activo)
+                    VALUES (?, ?, ?, ?, 1)''',
+                 ('Visa Platino', 28, 16, 50000.00))
+
+        c.execute('''INSERT INTO tarjetas_credito
+                    (nombre, fecha_corte, fecha_pago_estimada, limite_credito, activo)
+                    VALUES (?, ?, ?, ?, 1)''',
+                 ('Mastercard Gold', 25, 10, 30000.00))
+
+        # Gastos de TDC corrientes
+        c.execute('''INSERT INTO gastos_tdc
+                    (tarjeta_id, fecha, concepto, monto, tipo, activo)
+                    VALUES (?, ?, ?, ?, ?, 1)''',
+                 (1, '2025-11-20', 'Supermercado', 2500.50, 'corriente'))
+
+        c.execute('''INSERT INTO gastos_tdc
+                    (tarjeta_id, fecha, concepto, monto, tipo, activo)
+                    VALUES (?, ?, ?, ?, ?, 1)''',
+                 (2, '2025-11-18', 'Gasolina', 1200.00, 'corriente'))
+
+        # Gastos MSI
+        c.execute('''INSERT INTO gastos_tdc
+                    (tarjeta_id, fecha, concepto, monto, tipo, meses_msi, mensualidad_msi, meses_restantes, activo)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)''',
+                 (1, '2025-10-15', 'Laptop', 24000.00, 'msi', 12, 2000.00, 10))
+
+        c.execute('''INSERT INTO gastos_tdc
+                    (tarjeta_id, fecha, concepto, monto, tipo, meses_msi, mensualidad_msi, meses_restantes, activo)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)''',
+                 (2, '2025-09-10', 'Celular', 18000.00, 'msi', 18, 1000.00, 15))
+
+        print("[OK] Datos de demostración insertados")
+
     conn.commit()
     conn.close()
     print("[OK] Base de datos inicializada")
