@@ -89,6 +89,42 @@ def init_db():
                   fecha_fin TEXT,
                   activo INTEGER DEFAULT 1)''')
 
+    # Tabla de préstamos
+    c.execute('''CREATE TABLE IF NOT EXISTS prestamos
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  nombre TEXT NOT NULL,
+                  monto_mensual REAL NOT NULL,
+                  dia_pago INTEGER NOT NULL,
+                  fecha_inicio TEXT NOT NULL,
+                  fecha_fin TEXT NOT NULL,
+                  dias_alerta INTEGER DEFAULT 10,
+                  activo INTEGER DEFAULT 1)''')
+
+    # Tabla de tarjetas de crédito
+    c.execute('''CREATE TABLE IF NOT EXISTS tarjetas_credito
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  nombre TEXT NOT NULL,
+                  fecha_corte INTEGER NOT NULL,
+                  fecha_pago_estimada INTEGER NOT NULL,
+                  limite_credito REAL DEFAULT 0,
+                  activo INTEGER DEFAULT 1)''')
+
+    # Tabla de gastos de tarjeta de crédito
+    c.execute('''CREATE TABLE IF NOT EXISTS gastos_tdc
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  tarjeta_id INTEGER NOT NULL,
+                  fecha TEXT NOT NULL,
+                  concepto TEXT NOT NULL,
+                  monto REAL NOT NULL,
+                  tipo TEXT DEFAULT 'corriente',
+                  meses_msi INTEGER DEFAULT 0,
+                  mensualidad_msi REAL DEFAULT 0,
+                  meses_restantes INTEGER DEFAULT 0,
+                  categoria_id INTEGER,
+                  activo INTEGER DEFAULT 1,
+                  FOREIGN KEY (tarjeta_id) REFERENCES tarjetas_credito(id),
+                  FOREIGN KEY (categoria_id) REFERENCES categorias(id))''')
+
     # Tabla de historial de simulaciones
     c.execute('''CREATE TABLE IF NOT EXISTS simulaciones_historial
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
