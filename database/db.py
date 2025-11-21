@@ -103,6 +103,36 @@ def init_db():
                   mes_critico TEXT,
                   saldo_minimo REAL)''')
 
+    # Agregar columna usuario_id a todas las tablas si no existe
+    tablas = [
+        'ingresos',
+        'gastos',
+        'creditos_programados',
+        'compras_msi',
+        'ingresos_recurrentes',
+        'configuracion',
+        'prestamos',
+        'tarjetas_credito',
+        'gastos_tdc',
+        'categorias',
+        'simulaciones_historial'
+    ]
+
+    for tabla in tablas:
+        try:
+            # Verificar si la tabla existe
+            c.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{tabla}'")
+            if c.fetchone():
+                # Verificar si la columna ya existe
+                c.execute(f"PRAGMA table_info({tabla})")
+                columnas = [col[1] for col in c.fetchall()]
+
+                if 'usuario_id' not in columnas:
+                    c.execute(f'ALTER TABLE {tabla} ADD COLUMN usuario_id INTEGER DEFAULT 1')
+                    print(f"[OK] Columna usuario_id agregada a '{tabla}'")
+        except Exception as e:
+            print(f"[WARN] Error agregando usuario_id a '{tabla}': {str(e)}")
+
     # Insertar registro de configuración si no existe
     c.execute("INSERT OR IGNORE INTO configuracion (id, balance_inicial, primera_vez) VALUES (1, 0.0, 1)")
 
