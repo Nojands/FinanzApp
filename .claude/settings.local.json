@@ -8,7 +8,10 @@
       "Bash(python:*)",
       "Bash(find:*)",
       "Bash(curl:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(git push)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd missing tables: prestamos, tarjetas_credito, gastos_tdc\n\nFixes ''no such table: gastos_tdc'' error by adding all missing table\ndefinitions to init_db(). These tables were referenced in app.py but\nnot created during database initialization.\n\nTables added:\n- prestamos: Monthly loan payments\n- tarjetas_credito: Credit cards info\n- gastos_tdc: Credit card expenses (regular and MSI)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []
