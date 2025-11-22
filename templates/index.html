@@ -713,18 +713,33 @@
           width: 100% !important;
           display: block;
           overflow-x: visible;
+          border: none !important;
         }
 
         table thead {
           display: none !important;
+          height: 0 !important;
+          overflow: hidden !important;
+          visibility: hidden !important;
+          border: none !important;
+        }
+
+        table thead tr,
+        table thead th {
+          display: none !important;
+          height: 0 !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          border: none !important;
         }
 
         table tbody {
           display: block;
           width: 100%;
+          border: none !important;
         }
 
-        table tr {
+        table tbody tr {
           display: block;
           margin-bottom: 12px;
           border: 1px solid var(--card-border);
@@ -732,6 +747,10 @@
           padding: 12px;
           background: var(--card-bg);
           width: 100%;
+        }
+
+        table tbody tr:first-child {
+          margin-top: 0 !important;
         }
 
         table td {
