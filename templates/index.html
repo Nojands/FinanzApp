@@ -664,45 +664,94 @@
           font-size: 16px; /* Previene zoom en iOS */
         }
 
+        /* Tablas responsivas - diseño tipo card */
         table {
-          font-size: 0.85em;
+          font-size: 0.8em;
+          width: 100% !important;
           display: block;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
+          overflow-x: visible;
         }
 
         table thead {
-          display: none;
+          display: none !important;
+        }
+
+        table tbody {
+          display: block;
+          width: 100%;
         }
 
         table tr {
           display: block;
-          margin-bottom: 15px;
+          margin-bottom: 12px;
           border: 1px solid var(--card-border);
           border-radius: 8px;
-          padding: 10px;
+          padding: 12px;
           background: var(--card-bg);
+          width: 100%;
         }
 
         table td {
-          display: block;
-          text-align: right;
-          padding: 8px 10px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 6px 0;
           border: none;
+          text-align: right;
+          word-wrap: break-word;
         }
 
         table td::before {
           content: attr(data-label);
-          float: left;
-          font-weight: bold;
+          font-weight: 600;
           color: var(--text-secondary);
+          margin-right: 10px;
+          flex-shrink: 0;
         }
 
+        table td:last-child {
+          border-top: 1px solid var(--card-border);
+          padding-top: 10px;
+          margin-top: 6px;
+          justify-content: center;
+        }
+
+        /* Botones en tablas */
         .btn-danger,
         .btn-secondary {
-          padding: 8px 12px;
-          font-size: 0.85em;
+          padding: 6px 10px;
+          font-size: 0.8em;
           margin: 2px;
+          display: inline-block;
+        }
+
+        /* Modales más específicos */
+        .modal {
+          padding: 5px !important;
+        }
+
+        .modal-content {
+          width: 96% !important;
+          max-width: 96% !important;
+          margin: 5px auto !important;
+          padding: 15px !important;
+          max-height: 92vh !important;
+          overflow-y: auto !important;
+          box-sizing: border-box;
+        }
+
+        .modal-content h2 {
+          font-size: 1.2em !important;
+          margin-bottom: 15px !important;
+        }
+
+        .modal-content .form-group {
+          margin-bottom: 12px !important;
+        }
+
+        .modal-content button {
+          width: 100%;
+          margin-top: 5px;
         }
       }
 
