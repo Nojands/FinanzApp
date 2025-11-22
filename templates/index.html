@@ -716,20 +716,32 @@
           border: none !important;
         }
 
+        /* Ocultar headers de tabla (th) completamente en mobile */
+        table tr:first-child {
+          display: none !important;
+          height: 0 !important;
+          overflow: hidden !important;
+          visibility: hidden !important;
+          position: absolute !important;
+          left: -9999px !important;
+        }
+
+        table th {
+          display: none !important;
+          height: 0 !important;
+          width: 0 !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          border: none !important;
+          visibility: hidden !important;
+        }
+
+        /* Para tablas con thead/tbody explícito */
         table thead {
           display: none !important;
           height: 0 !important;
           overflow: hidden !important;
           visibility: hidden !important;
-          border: none !important;
-        }
-
-        table thead tr,
-        table thead th {
-          display: none !important;
-          height: 0 !important;
-          padding: 0 !important;
-          margin: 0 !important;
           border: none !important;
         }
 
@@ -739,7 +751,7 @@
           border: none !important;
         }
 
-        table tbody tr {
+        table tr {
           display: block;
           margin-bottom: 12px;
           border: 1px solid var(--card-border);
@@ -749,8 +761,9 @@
           width: 100%;
         }
 
-        table tbody tr:first-child {
-          margin-top: 0 !important;
+        /* Asegurar que el primer tr (headers) no se muestre nunca */
+        table > tr:first-child {
+          display: none !important;
         }
 
         table td {
