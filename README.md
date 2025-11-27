@@ -1,37 +1,37 @@
-# 💰 FinanzApp - Sistema de Gestión Financiera Personal
+# 💰 FinanzApp - Personal Finance Management System
 
-Aplicación web full-stack para gestión financiera personal con proyecciones quincenales automatizadas, sistema de alertas y dashboard analítico.
+Full-stack web application for personal finance management with automated biweekly projections, alert system, and analytical dashboard.
 
 ![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
 ![Flask](https://img.shields.io/badge/Flask-3.0+-green.svg)
 ![SQLite](https://img.shields.io/badge/SQLite-3-orange.svg)
 
-## 🚀 Características Principales
+## 🚀 Key Features
 
-### 📊 Proyección Quincenal Inteligente
-- Proyecciones automatizadas hasta 12 meses adelante
-- Sistema de semáforo visual (🟢 Verde, 🟡 Amarillo, 🔴 Rojo)
-- Cálculos precisos considerando fechas de pago personalizadas
-- Análisis de tendencias y saldo mínimo proyectado
+### 📊 Smart Biweekly Projection
+- Automated projections up to 12 months ahead
+- Visual traffic light system (🟢 Green, 🟡 Yellow, 🔴 Red)
+- Precise calculations considering custom payment dates
+- Trend analysis and minimum projected balance
 
-### 💳 Gestión de Tarjetas de Crédito
-- Soporte para múltiples tarjetas
-- Distinción entre gastos corrientes y MSI (Meses Sin Intereses)
-- Tracking automático de pagos mensuales
-- Alertas de vencimientos próximos
+### 💳 Credit Card Management
+- Support for multiple credit cards
+- Distinction between regular expenses and installment payments (Interest-Free Months)
+- Automatic tracking of monthly payments
+- Upcoming due date alerts
 
-### 📈 Dashboard Analítico
-- Gráficas interactivas con Chart.js
-- Análisis de ingresos vs gastos históricos
-- Distribución de gastos por categoría
-- Proyección visual de saldo futuro
+### 📈 Analytical Dashboard
+- Interactive charts with Chart.js
+- Historical income vs expenses analysis
+- Expense distribution by category
+- Visual projection of future balance
 
-### 🎯 Simulador de Compras
-- Proyección de impacto financiero antes de comprar
-- Comparación con/sin compra
-- Recomendaciones automáticas basadas en saldo proyectado
+### 🎯 Purchase Simulator
+- Financial impact projection before purchasing
+- Comparison with/without purchase
+- Automatic recommendations based on projected balance
 
-## 🛠️ Tecnologías Utilizadas
+## 🛠️ Technologies Used
 
 **Backend:**
 - Python 3.9+
@@ -43,71 +43,71 @@ Aplicación web full-stack para gestión financiera personal con proyecciones qu
 - HTML5 / CSS3
 - JavaScript (ES6+)
 - Chart.js
-- Diseño responsivo
+- Responsive design
 
-## 📦 Instalación
+## 📦 Installation
 
 ```bash
-# Clonar repositorio
-git clone https://github.com/tu-usuario/finanzapp.git
+# Clone repository
+git clone https://github.com/your-username/finanzapp.git
 cd finanzapp
 
-# Instalar dependencias
+# Install dependencies
 pip install flask python-dateutil
 
-# Crear datos de demo
+# Create demo data
 python create_demo_data.py
 
-# Ejecutar aplicación
+# Run application
 python app.py
 ```
 
-Abre http://localhost:5000 en tu navegador
+Open http://localhost:5000 in your browser
 
-## 📁 Estructura del Proyecto
+## 📁 Project Structure
 
 ```
 FinanzApp/
-├── app.py                  # Punto de entrada
-├── config.py              # Configuración
-├── database.py            # Gestión DB
-├── routes/                # Blueprints Flask
+├── app.py                  # Entry point
+├── config.py              # Configuration
+├── database.py            # DB management
+├── routes/                # Flask Blueprints
 │   └── dashboard.py
-├── services/              # Lógica de negocio
+├── services/              # Business logic
 │   └── proyeccion.py
-├── Templates/             # Templates HTML
-└── finanzas.db           # Base de datos
+├── templates/             # HTML templates
+└── finanzas.db           # Database
 ```
 
-## 🎮 Uso Básico
+## 🎮 Basic Usage
 
-1. **Primera configuración**: Establece balance inicial y fechas de pago
-2. **Registra ingresos recurrentes**: Nómina, aguinaldo, etc.
-3. **Agrega gastos**: TDC, préstamos, MSI
-4. **Revisa proyecciones**: Dashboard visual con semáforo
-5. **Simula compras**: Antes de comprometerte financieramente
+1. **Initial setup**: Set initial balance and payment dates
+2. **Register recurring income**: Salary, bonuses, etc.
+3. **Add expenses**: Credit cards, loans, installment payments
+4. **Check projections**: Visual dashboard with traffic light system
+5. **Simulate purchases**: Before making financial commitments
 
-## 🚀 Deploy Gratis
+## 🚀 Free Deployment
 
 ### Railway
-1. Sube tu código a GitHub
-2. Conecta en Railway.app
-3. Deploy automático
+1. Upload your code to GitHub
+2. Connect on Railway.app
+3. Automatic deployment
 
 ### Render
-1. New Web Service en Render.com
-2. Conecta repositorio
+1. New Web Service on Render.com
+2. Connect repository
 3. Build: `pip install flask python-dateutil`
 4. Start: `python app.py`
 
-## 🤝 Contribuciones
+## 🤝 Contributions
 
-Las contribuciones son bienvenidas! Abre un Issue o Pull Request.
+Contributions are welcome! Open an Issue or Pull Request.
 
-## 📄 Licencia
+## 📄 License
 
-MIT License - ver LICENSE para detalles
+MIT License - see LICENSE for details
 
 ---
 
-**Hecho con ❤️ en México**
+**Made with ❤️ in Mexico**
