@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-# app.py - FinanzApp Modular - Aplicacion Principal
+# app.py - FinanzApp Modular - Main Application
 from flask import Flask, render_template, session
 from config import Config
 from database import init_db, get_db_connection
 from services import calcular_proyeccion_meses, obtener_proximas_alertas
 
-# Importar blueprints
+# Import blueprints
 from routes import (
     ingresos_bp,
     gastos_bp,
@@ -19,11 +19,11 @@ from routes import (
     api_bp
 )
 
-# Crear aplicacion Flask
+# Create Flask application
 app = Flask(__name__)
 app.secret_key = Config.SECRET_KEY
 
-# Registrar blueprints
+# Register blueprints
 app.register_blueprint(ingresos_bp)
 app.register_blueprint(gastos_bp)
 app.register_blueprint(creditos_bp)
@@ -38,15 +38,15 @@ app.register_blueprint(api_bp)
 
 @app.route('/')
 def home():
-    """P�gina principal con dashboard"""
+    """Main page with dashboard"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
 
-        # Obtener usuario_id (por ahora siempre es 1 por SKIP_LOGIN)
+        # Get usuario_id (currently always 1 due to SKIP_LOGIN)
         usuario_id = Config.DEFAULT_USER_ID if Config.SKIP_LOGIN else session.get('usuario_id', 1)
 
-        # Obtener configuraci�n (incluyendo vista quincenal)
+        # Get configuration (including biweekly view)
         c.execute('SELECT balance_inicial, primera_vez, vista_quincenal, fecha_pago_1, fecha_pago_2 FROM configuracion WHERE id=1 AND usuario_id=?', (usuario_id,))
         config_row = c.fetchone()
 
@@ -63,14 +63,14 @@ def home():
             fecha_pago_1 = 15
             fecha_pago_2 = 30
 
-        # Datos actuales (filtrados por usuario)
+        # Current data (filtered by user)
         c.execute('SELECT * FROM ingresos WHERE usuario_id=? ORDER BY fecha DESC LIMIT 10', (usuario_id,))
         ingresos = c.fetchall()
 
         c.execute('SELECT * FROM gastos WHERE usuario_id=? ORDER BY fecha DESC LIMIT 10', (usuario_id,))
         gastos = c.fetchall()
 
-        # Gastos con tarjeta de crédito (con info de la tarjeta)
+        # Credit card expenses (with card info)
         c.execute('''SELECT gt.*, tc.nombre as tarjeta_nombre, tc.fecha_pago_estimada, tc.fecha_corte
                      FROM gastos_tdc gt
                      JOIN tarjetas_credito tc ON gt.tarjeta_id = tc.id
@@ -86,57 +86,57 @@ def home():
         total_gastos_row = c.fetchone()
         total_gastos = total_gastos_row['total'] if total_gastos_row['total'] else 0.0
 
-        # NOTA: Los gastos de TDC NO se suman aquí porque no se han pagado aún.
-        # Aparecerán como pendientes en las alertas y proyecciones hasta su fecha de pago.
+        # NOTE: Credit card expenses are NOT summed here because they haven't been paid yet.
+        # They will appear as pending in alerts and projections until their payment date.
 
-        # Cr�ditos y MSI (mantener para compatibilidad)
+        # Credits and MSI (keep for compatibility)
         c.execute('SELECT * FROM creditos_programados WHERE activo=1 AND usuario_id=?', (usuario_id,))
         creditos = c.fetchall()
 
         c.execute('SELECT * FROM compras_msi WHERE activo=1 AND usuario_id=?', (usuario_id,))
         msis = c.fetchall()
 
-        # Pr�stamos (nuevo sistema)
+        # Loans (new system)
         c.execute('SELECT * FROM prestamos WHERE activo=1 AND usuario_id=?', (usuario_id,))
         prestamos = c.fetchall()
 
-        # Tarjetas de Cr�dito (nuevo sistema)
+        # Credit Cards (new system)
         c.execute('SELECT * FROM tarjetas_credito WHERE activo=1 AND usuario_id=?', (usuario_id,))
         tarjetas = c.fetchall()
 
-        # Ingresos recurrentes
+        # Recurring income
         c.execute('SELECT * FROM ingresos_recurrentes WHERE activo=1 AND usuario_id=?', (usuario_id,))
         ingresos_recurrentes = c.fetchall()
 
-        # Historial de simulaciones (últimas 10)
+        # Simulation history (last 10)
         c.execute('''SELECT * FROM simulaciones_historial
                      WHERE usuario_id=?
                      ORDER BY fecha_simulacion DESC
                      LIMIT 10''', (usuario_id,))
         historial_simulaciones = c.fetchall()
 
-        # Obtener categorías (filtradas por usuario)
+        # Get categories (filtered by user)
         c.execute('SELECT * FROM categorias WHERE usuario_id=? ORDER BY tipo, nombre', (usuario_id,))
         categorias = c.fetchall()
 
-        # Balance real = Balance inicial + Ingresos - Gastos
+        # Real balance = Initial balance + Income - Expenses
         balance = balance_inicial + total_ingresos - total_gastos
 
         conn.close()
 
-        # Calcular proyecci�n mensual (siempre)
+        # Calculate monthly projection (always)
         proyeccion = calcular_proyeccion_meses(Config.PROYECCION_MESES_DEFAULT)
 
-        # Calcular proyecci�n quincenal si está activada
+        # Calculate biweekly projection if enabled
         proyeccion_quincenal = None
         if vista_quincenal == 1:
             from services import calcular_quincenas_a_proyectar, calcular_proyeccion_quincenal
-            # Calcular dinámicamente cuántas quincenas proyectar
+            # Dynamically calculate how many biweekly periods to project
             num_quincenas = calcular_quincenas_a_proyectar()
-            # Calcular proyección quincenal con fechas personalizadas del usuario
+            # Calculate biweekly projection with user's custom payment dates
             proyeccion_quincenal = calcular_proyeccion_quincenal(num_quincenas, fecha_pago_1, fecha_pago_2)
 
-        # Obtener pr�ximas alertas
+        # Get upcoming alerts
         alertas = obtener_proximas_alertas(15)
 
         return render_template('index.html',
@@ -163,25 +163,25 @@ def home():
                              categorias=categorias)
 
     except Exception as e:
-        print(f"[ERROR] Error en p�gina principal: {str(e)}")
-        return f"Error al cargar la p�gina: {str(e)}", 500
+        print(f"[ERROR] Error on main page: {str(e)}")
+        return f"Error loading page: {str(e)}", 500
 
 
 if __name__ == '__main__':
     import os
 
-    # Inicializar base de datos al arrancar
+    # Initialize database on startup
     init_db()
 
-    # Arrancar servidor
+    # Start server
     print("=" * 60)
-    print("  FINANZAPP - Sistema de Gestion Financiera Personal")
+    print("  FINANZAPP - Personal Financial Management System")
     print("=" * 60)
 
-    # Railway proporciona el puerto via variable de entorno
+    # Railway provides port via environment variable
     port = int(os.environ.get('PORT', 5000))
 
-    print(f"  Servidor: http://0.0.0.0:{port}")
+    print(f"  Server: http://0.0.0.0:{port}")
     print(f"  Dashboard: http://0.0.0.0:{port}/dashboard")
     print("=" * 60)
     print("")

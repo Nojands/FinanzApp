@@ -1,20 +1,20 @@
-# database/db.py - Funciones de base de datos
+# database/db.py - Database functions
 import sqlite3
 from config import Config
 
 def get_db_connection():
-    """Obtener conexión a la base de datos"""
+    """Get database connection"""
     conn = sqlite3.connect(Config.DATABASE_PATH)
-    conn.row_factory = sqlite3.Row  # Para acceder a columnas por nombre
+    conn.row_factory = sqlite3.Row  # To access columns by name
     return conn
 
 
 def init_db():
-    """Inicializar base de datos"""
+    """Initialize database"""
     conn = get_db_connection()
     c = conn.cursor()
 
-    # Tabla de categorías
+    # Categories table
     c.execute('''CREATE TABLE IF NOT EXISTS categorias
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   nombre TEXT UNIQUE NOT NULL,
@@ -22,7 +22,7 @@ def init_db():
                   color TEXT DEFAULT '#6c757d',
                   icono TEXT DEFAULT 'circle')''')
 
-    # Tabla de ingresos
+    # Income table
     c.execute('''CREATE TABLE IF NOT EXISTS ingresos
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   fecha TEXT,
@@ -31,7 +31,7 @@ def init_db():
                   categoria_id INTEGER,
                   FOREIGN KEY (categoria_id) REFERENCES categorias(id))''')
 
-    # Tabla de gastos
+    # Expenses table
     c.execute('''CREATE TABLE IF NOT EXISTS gastos
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   fecha TEXT,
@@ -41,7 +41,7 @@ def init_db():
                   categoria_id INTEGER,
                   FOREIGN KEY (categoria_id) REFERENCES categorias(id))''')
 
-    # Tabla de créditos programados (pagos fijos mensuales)
+    # Scheduled credits table (fixed monthly payments)
     c.execute('''CREATE TABLE IF NOT EXISTS creditos_programados
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   nombre TEXT,
@@ -56,7 +56,7 @@ def init_db():
                   notas TEXT,
                   activo INTEGER DEFAULT 1)''')
 
-    # Tabla de compras MSI
+    # Interest-free installments table (MSI)
     c.execute('''CREATE TABLE IF NOT EXISTS compras_msi
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   producto TEXT,
@@ -69,7 +69,7 @@ def init_db():
                   dias_alerta INTEGER DEFAULT 10,
                   activo INTEGER DEFAULT 1)''')
 
-    # Tabla de configuración (nueva estructura con columnas directas)
+    # Configuration table (new structure with direct columns)
     c.execute('''CREATE TABLE IF NOT EXISTS configuracion
                  (id INTEGER PRIMARY KEY,
                   balance_inicial REAL DEFAULT 0,
@@ -79,7 +79,7 @@ def init_db():
                   fecha_pago_2 INTEGER DEFAULT 30,
                   usuario_id INTEGER DEFAULT 1)''')
 
-    # Tabla de ingresos recurrentes
+    # Recurring income table
     c.execute('''CREATE TABLE IF NOT EXISTS ingresos_recurrentes
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   nombre TEXT,
@@ -91,7 +91,7 @@ def init_db():
                   mes_especifico INTEGER DEFAULT NULL,
                   activo INTEGER DEFAULT 1)''')
 
-    # Tabla de préstamos
+    # Loans table
     c.execute('''CREATE TABLE IF NOT EXISTS prestamos
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   nombre TEXT NOT NULL,
@@ -102,7 +102,7 @@ def init_db():
                   dias_alerta INTEGER DEFAULT 10,
                   activo INTEGER DEFAULT 1)''')
 
-    # Tabla de tarjetas de crédito
+    # Credit cards table
     c.execute('''CREATE TABLE IF NOT EXISTS tarjetas_credito
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   nombre TEXT NOT NULL,
@@ -111,7 +111,7 @@ def init_db():
                   limite_credito REAL DEFAULT 0,
                   activo INTEGER DEFAULT 1)''')
 
-    # Tabla de gastos de tarjeta de crédito
+    # Credit card expenses table
     c.execute('''CREATE TABLE IF NOT EXISTS gastos_tdc
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   tarjeta_id INTEGER NOT NULL,
@@ -127,7 +127,7 @@ def init_db():
                   FOREIGN KEY (tarjeta_id) REFERENCES tarjetas_credito(id),
                   FOREIGN KEY (categoria_id) REFERENCES categorias(id))''')
 
-    # Tabla de historial de simulaciones
+    # Simulation history table
     c.execute('''CREATE TABLE IF NOT EXISTS simulaciones_historial
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   fecha_simulacion TEXT,
@@ -141,7 +141,7 @@ def init_db():
                   mes_critico TEXT,
                   saldo_minimo REAL)''')
 
-    # Agregar columna usuario_id a todas las tablas si no existe
+    # Add usuario_id column to all tables if it doesn't exist
     tablas = [
         'ingresos',
         'gastos',
@@ -158,20 +158,20 @@ def init_db():
 
     for tabla in tablas:
         try:
-            # Verificar si la tabla existe
+            # Check if table exists
             c.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{tabla}'")
             if c.fetchone():
-                # Verificar si la columna ya existe
+                # Check if column already exists
                 c.execute(f"PRAGMA table_info({tabla})")
                 columnas = [col[1] for col in c.fetchall()]
 
                 if 'usuario_id' not in columnas:
                     c.execute(f'ALTER TABLE {tabla} ADD COLUMN usuario_id INTEGER DEFAULT 1')
-                    print(f"[OK] Columna usuario_id agregada a '{tabla}'")
+                    print(f"[OK] Column usuario_id added to '{tabla}'")
         except Exception as e:
-            print(f"[WARN] Error agregando usuario_id a '{tabla}': {str(e)}")
+            print(f"[WARN] Error adding usuario_id to '{tabla}': {str(e)}")
 
-    # Agregar columnas frecuencia y mes_especifico a ingresos_recurrentes si no existen
+    # Add frecuencia and mes_especifico columns to ingresos_recurrentes if they don't exist
     try:
         c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='ingresos_recurrentes'")
         if c.fetchone():
@@ -180,20 +180,20 @@ def init_db():
 
             if 'frecuencia' not in columnas_ing_rec:
                 c.execute('ALTER TABLE ingresos_recurrentes ADD COLUMN frecuencia TEXT DEFAULT "mensual"')
-                print("[OK] Columna frecuencia agregada a 'ingresos_recurrentes'")
+                print("[OK] Column frecuencia added to 'ingresos_recurrentes'")
 
             if 'mes_especifico' not in columnas_ing_rec:
                 c.execute('ALTER TABLE ingresos_recurrentes ADD COLUMN mes_especifico INTEGER DEFAULT NULL')
-                print("[OK] Columna mes_especifico agregada a 'ingresos_recurrentes'")
+                print("[OK] Column mes_especifico added to 'ingresos_recurrentes'")
     except Exception as e:
-        print(f"[WARN] Error agregando columnas a ingresos_recurrentes: {str(e)}")
+        print(f"[WARN] Error adding columns to ingresos_recurrentes: {str(e)}")
 
-    # Insertar registro de configuración si no existe
+    # Insert configuration record if it doesn't exist
     c.execute("INSERT OR IGNORE INTO configuracion (id, balance_inicial, primera_vez) VALUES (1, 0.0, 1)")
 
-    # Insertar categorías predeterminadas
+    # Insert default categories
     categorias_default = [
-        # Categorías de Gastos
+        # Expense Categories
         ('Alimentación', 'gasto', '#FF6384', 'utensils'),
         ('Transporte', 'gasto', '#36A2EB', 'car'),
         ('Vivienda', 'gasto', '#FFCE56', 'home'),
@@ -204,7 +204,7 @@ def init_db():
         ('Ropa', 'gasto', '#FF6384', 'tshirt'),
         ('Otros Gastos', 'gasto', '#6c757d', 'circle'),
 
-        # Categorías de Ingresos
+        # Income Categories
         ('Salario', 'ingreso', '#28a745', 'money-bill-wave'),
         ('Freelance', 'ingreso', '#20c997', 'laptop-code'),
         ('Inversiones', 'ingreso', '#17a2b8', 'chart-line'),
@@ -216,19 +216,19 @@ def init_db():
         c.execute('''INSERT OR IGNORE INTO categorias (nombre, tipo, color, icono)
                      VALUES (?, ?, ?, ?)''', categoria)
 
-    # Insertar datos de demostración SOLO en producción (Render)
-    # Verificar variable de entorno USAR_DATOS_DEMO
+    # Insert demo data ONLY in production (Render)
+    # Check USAR_DATOS_DEMO environment variable
     import os
     usar_datos_demo = os.environ.get('USAR_DATOS_DEMO', 'false').lower() == 'true'
 
     c.execute('SELECT COUNT(*) FROM tarjetas_credito')
     if c.fetchone()[0] == 0 and usar_datos_demo:
-        print("[INFO] Insertando datos de demostración (USAR_DATOS_DEMO=true)...")
+        print("[INFO] Inserting demo data (USAR_DATOS_DEMO=true)...")
 
-        # Balance inicial
+        # Initial balance
         c.execute('UPDATE configuracion SET balance_inicial=25000.0, primera_vez=0 WHERE id=1')
 
-        # Ingresos recurrentes (nómina quincenal)
+        # Recurring income (biweekly payroll)
         c.execute('''INSERT INTO ingresos_recurrentes
                     (nombre, monto, dia_pago, fecha_inicio, fecha_fin, frecuencia, activo)
                     VALUES (?, ?, ?, ?, ?, ?, 1)''',
@@ -239,13 +239,13 @@ def init_db():
                     VALUES (?, ?, ?, ?, ?, ?, 1)''',
                  ('Nómina Quincenal 2', 12500.00, 25, '2025-01-01', '2099-12-31', 'mensual'))
 
-        # Préstamos
+        # Loans
         c.execute('''INSERT INTO prestamos
                     (nombre, monto_mensual, dia_pago, fecha_inicio, fecha_fin, activo)
                     VALUES (?, ?, ?, ?, ?, 1)''',
                  ('Préstamo Personal', 3500.00, 15, '2025-01-01', '2026-12-31'))
 
-        # Tarjetas de crédito
+        # Credit cards
         c.execute('''INSERT INTO tarjetas_credito
                     (nombre, fecha_corte, fecha_pago_estimada, limite_credito, activo)
                     VALUES (?, ?, ?, ?, 1)''',
@@ -256,7 +256,7 @@ def init_db():
                     VALUES (?, ?, ?, ?, 1)''',
                  ('Mastercard Gold', 25, 10, 30000.00))
 
-        # Gastos de TDC corrientes
+        # Regular credit card expenses
         c.execute('''INSERT INTO gastos_tdc
                     (tarjeta_id, fecha, concepto, monto, tipo, activo)
                     VALUES (?, ?, ?, ?, ?, 1)''',
@@ -267,7 +267,7 @@ def init_db():
                     VALUES (?, ?, ?, ?, ?, 1)''',
                  (2, '2025-11-18', 'Gasolina', 1200.00, 'corriente'))
 
-        # Gastos MSI
+        # Interest-free installments (MSI)
         c.execute('''INSERT INTO gastos_tdc
                     (tarjeta_id, fecha, concepto, monto, tipo, meses_msi, mensualidad_msi, meses_restantes, activo)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)''',
@@ -278,8 +278,8 @@ def init_db():
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)''',
                  (2, '2025-09-10', 'Celular', 18000.00, 'msi', 18, 1000.00, 15))
 
-        print("[OK] Datos de demostración insertados")
+        print("[OK] Demo data inserted")
 
     conn.commit()
     conn.close()
-    print("[OK] Base de datos inicializada")
+    print("[OK] Database initialized")
