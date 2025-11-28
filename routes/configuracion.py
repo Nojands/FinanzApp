@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# routes/configuracion.py - Rutas de configuracion y gestion de ingresos recurrentes
+# routes/configuracion.py - Configuration and recurring income management routes
 from flask import request, redirect, flash
 from routes import config_bp
 from database import get_db_connection
@@ -8,11 +8,11 @@ from config import Config
 
 @config_bp.route('/configurar_balance_inicial', methods=['POST'])
 def configurar_balance_inicial():
-    """Configurar balance inicial (primera vez)"""
+    """Configure initial balance (first time)"""
     try:
         balance_str = request.form.get('balance', '0')
 
-        # Validar balance
+        # Validate balance
         valido, balance, error = validar_monto(balance_str, "Balance inicial", minimo=None)
         if not valido:
             flash(f'Error: {error}', 'error')
@@ -21,7 +21,7 @@ def configurar_balance_inicial():
         conn = get_db_connection()
         c = conn.cursor()
 
-        # Actualizar balance inicial y marcar que ya no es primera vez
+        # Update initial balance and mark that it's no longer first time
         c.execute('UPDATE configuracion SET balance_inicial=?, primera_vez=0 WHERE id=1', (balance,))
         conn.commit()
         conn.close()
@@ -38,11 +38,11 @@ def configurar_balance_inicial():
 
 @config_bp.route('/editar_balance_inicial', methods=['POST'])
 def editar_balance_inicial():
-    """Editar balance inicial"""
+    """Edit initial balance"""
     try:
         balance_str = request.form.get('balance', '0')
 
-        # Validar balance
+        # Validate balance
         valido, balance, error = validar_monto(balance_str, "Balance inicial", minimo=None)
         if not valido:
             flash(f'Error: {error}', 'error')
@@ -76,25 +76,25 @@ def agregar_ingreso_recurrente():
         frecuencia = request.form.get('frecuencia', 'mensual').strip()
         mes_especifico_str = request.form.get('mes_especifico', '')
 
-        # Validar nombre
+        # Validate name
         valido_nombre, nombre, error_nombre = validar_texto(nombre, "Nombre")
         if not valido_nombre:
             flash(f'Error: {error_nombre}', 'error')
             return redirect('/')
 
-        # Validar monto
+        # Validate amount
         valido_monto, monto, error_monto = validar_monto(monto_str, "Monto", minimo=0.01)
         if not valido_monto:
             flash(f'Error: {error_monto}', 'error')
             return redirect('/')
 
-        # Validar d�a de pago
+        # Validate payment day
         valido_dia, dia_pago, error_dia = validar_dia_mes(dia_pago_str, "D�a de pago")
         if not valido_dia:
             flash(f'Error: {error_dia}', 'error')
             return redirect('/')
 
-        # Validar/calcular fecha de inicio
+        # Validate/calculate start date
         if not fecha_inicio or fecha_inicio == '':
             fecha_inicio = calcular_fecha_inicio_inteligente(dia_pago)
         else:
@@ -103,7 +103,7 @@ def agregar_ingreso_recurrente():
                 flash(f'Error: {error_fecha_inicio}', 'error')
                 return redirect('/')
 
-        # Validar fecha fin (opcional)
+        # Validate end date (optional)
         if not fecha_fin or fecha_fin == '':
             fecha_fin = Config.FECHA_INDEFINIDA
         else:
@@ -112,7 +112,7 @@ def agregar_ingreso_recurrente():
                 flash(f'Error: {error_fecha_fin}', 'error')
                 return redirect('/')
 
-        # Procesar mes_especifico (solo para frecuencia anual)
+        # Process mes_especifico (only for annual frequency)
         mes_especifico = None
         if frecuencia == 'anual' and mes_especifico_str:
             try:
@@ -122,7 +122,7 @@ def agregar_ingreso_recurrente():
             except:
                 mes_especifico = None
 
-        # Insertar en BD
+        # Insert into database
         conn = get_db_connection()
         c = conn.cursor()
         c.execute('''INSERT INTO ingresos_recurrentes
@@ -184,16 +184,16 @@ def borrar_ingreso_recurrente(id):
 
 @config_bp.route('/actualizar_vista_quincenal', methods=['POST'])
 def actualizar_vista_quincenal():
-    """Actualizar configuración de vista quincenal"""
+    """Update biweekly view configuration"""
     try:
         from flask import session
 
-        # Obtener valores del formulario
+        # Get form values
         vista_quincenal = 1 if request.form.get('vista_quincenal') == '1' else 0
         fecha_pago_1_str = request.form.get('fecha_pago_1', '15')
         fecha_pago_2_str = request.form.get('fecha_pago_2', '30')
 
-        # Validar fechas de pago
+        # Validate payment dates
         valido_1, fecha_pago_1, error_1 = validar_dia_mes(fecha_pago_1_str, "Primera fecha de pago")
         if not valido_1:
             flash(f'Error: {error_1}', 'error')
@@ -204,15 +204,15 @@ def actualizar_vista_quincenal():
             flash(f'Error: {error_2}', 'error')
             return redirect('/')
 
-        # Validar que las fechas sean diferentes
+        # Validate that dates are different
         if fecha_pago_1 == fecha_pago_2:
             flash('Error: Las fechas de pago deben ser diferentes', 'error')
             return redirect('/')
 
-        # Obtener usuario_id
+        # Get usuario_id
         usuario_id = Config.DEFAULT_USER_ID if Config.SKIP_LOGIN else session.get('usuario_id', 1)
 
-        # Actualizar en la base de datos
+        # Update in database
         conn = get_db_connection()
         c = conn.cursor()
         c.execute('''UPDATE configuracion
