@@ -1,4 +1,4 @@
-# services/alertas.py - Lógica de alertas de pagos
+# services/alertas.py - Payment alerts logic
 import sqlite3
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -6,23 +6,23 @@ from config import Config
 
 def obtener_proximas_alertas(dias_adelante=15):
     """
-    Obtener próximas alertas de pagos
+    Get upcoming payment alerts
 
     Args:
-        dias_adelante: Días hacia adelante para buscar alertas
+        dias_adelante: Days ahead to search for alerts
 
     Returns:
-        list: Lista de diccionarios con alertas
+        list: List of dictionaries with alerts
     """
     conn = sqlite3.connect(Config.DATABASE_PATH)
     c = conn.cursor()
 
-    # Obtener créditos activos con alertas
+    # Get active credits with alerts
     c.execute('''SELECT id, nombre, monto_mensual, fecha_limite_pago, dias_alerta, notas, fecha_inicio, fecha_fin
                  FROM creditos_programados WHERE activo=1''')
     creditos = c.fetchall()
 
-    # Obtener MSI activos
+    # Get active MSI purchases
     c.execute('''SELECT id, producto, mensualidad, dia_pago, dias_alerta
                  FROM compras_msi WHERE activo=1 AND meses_restantes > 0''')
     msis = c.fetchall()
@@ -32,39 +32,39 @@ def obtener_proximas_alertas(dias_adelante=15):
     alertas = []
     hoy = datetime.now()
 
-    # Procesar créditos
+    # Process credits
     for cred in creditos:
         dia_limite = cred[3]
         dias_alerta = cred[4] or 10
         fecha_inicio_str = cred[6]
         fecha_fin_str = cred[7]
 
-        # Verificar si el crédito ya inició
+        # Verify if credit has already started
         if fecha_inicio_str:
             fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d')
             if hoy < fecha_inicio:
-                # El crédito aún no ha iniciado, no mostrar alertas
+                # Credit hasn't started yet, don't show alerts
                 continue
 
-        # Verificar si el crédito ya terminó
+        # Verify if credit has already ended
         if fecha_fin_str:
             fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d')
             if hoy > fecha_fin:
-                # El crédito ya terminó, no mostrar alertas
+                # Credit has already ended, don't show alerts
                 continue
 
-        # Calcular próxima fecha de pago (este mes o siguiente)
-        for mes_offset in range(3):  # Revisar próximos 3 meses
+        # Calculate next payment date (this month or next)
+        for mes_offset in range(3):  # Check next 3 months
             fecha_pago = hoy + relativedelta(months=mes_offset)
             try:
                 fecha_pago = datetime(fecha_pago.year, fecha_pago.month, dia_limite)
             except ValueError:
-                # Si el día no existe en ese mes (ej: 31 en febrero), usar último día
+                # If day doesn't exist in that month (e.g., Feb 31), use last day
                 fecha_pago = datetime(fecha_pago.year, fecha_pago.month, 1) + relativedelta(months=1, days=-1)
 
             dias_para_pago = (fecha_pago - hoy).days
 
-            # Usar dias_alerta del crédito específico en lugar de dias_adelante global
+            # Use dias_alerta from specific credit instead of global dias_adelante
             if 0 <= dias_para_pago <= dias_alerta:
                 urgencia = "urgente" if dias_para_pago <= 2 else "proximo" if dias_para_pago <= 5 else "programado"
 
@@ -79,7 +79,7 @@ def obtener_proximas_alertas(dias_adelante=15):
                 })
                 break
 
-    # Procesar MSI
+    # Process MSI purchases
     for msi in msis:
         dia_pago = msi[3] if msi[3] else 15
         dias_alerta = msi[4] or 10
@@ -93,7 +93,7 @@ def obtener_proximas_alertas(dias_adelante=15):
 
             dias_para_pago = (fecha_pago - hoy).days
 
-            # Usar dias_alerta del MSI específico en lugar de dias_adelante global
+            # Use dias_alerta from specific MSI instead of global dias_adelante
             if 0 <= dias_para_pago <= dias_alerta:
                 urgencia = "urgente" if dias_para_pago <= 2 else "proximo" if dias_para_pago <= 5 else "programado"
 
@@ -108,7 +108,7 @@ def obtener_proximas_alertas(dias_adelante=15):
                 })
                 break
 
-    # Ordenar por fecha más próxima
+    # Sort by nearest date
     alertas.sort(key=lambda x: x['dias_restantes'])
 
     return alertas

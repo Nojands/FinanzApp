@@ -1,28 +1,28 @@
-# services/simulador.py - Lógica del simulador de compras
+# services/simulador.py - Purchase simulator logic
 from database import get_db_connection
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 def simular_compra(precio, meses):
     """
-    Simular impacto de una compra MSI en la proyección
+    Simulate impact of an MSI purchase on projection
 
     Args:
-        precio: Precio total de la compra
-        meses: Meses sin intereses
+        precio: Total purchase price
+        meses: Interest-free months
 
     Returns:
-        dict: Resultado de la simulación con proyección mes a mes
+        dict: Simulation result with month-by-month projection
     """
     conn = get_db_connection()
     c = conn.cursor()
 
-    # Obtener balance inicial
+    # Get initial balance
     c.execute("SELECT balance_inicial FROM configuracion WHERE id=1")
     result = c.fetchone()
     balance_inicial = float(result[0]) if result else 0.0
 
-    # Obtener totales de ingresos y gastos
+    # Get income and expense totals
     c.execute('SELECT SUM(monto) as total FROM ingresos')
     total_ingresos_row = c.fetchone()
     total_ingresos = total_ingresos_row['total'] if total_ingresos_row['total'] else 0.0
@@ -31,27 +31,27 @@ def simular_compra(precio, meses):
     total_gastos_row = c.fetchone()
     total_gastos = total_gastos_row['total'] if total_gastos_row['total'] else 0.0
 
-    # Calcular saldo actual
+    # Calculate current balance
     saldo_actual = balance_inicial + total_ingresos - total_gastos
 
-    # Obtener ingresos recurrentes
+    # Get recurring income
     c.execute('SELECT * FROM ingresos_recurrentes WHERE activo=1')
     ingresos_rec = c.fetchall()
 
-    # Obtener créditos programados
+    # Get scheduled credits
     c.execute('SELECT * FROM creditos_programados WHERE activo=1')
     creditos = c.fetchall()
 
-    # Obtener MSI activos
+    # Get active MSI purchases
     c.execute('SELECT * FROM compras_msi WHERE activo=1')
     msis = c.fetchall()
 
     conn.close()
 
-    # Calcular mensualidad
+    # Calculate monthly payment
     mensualidad = precio / meses
 
-    # Proyectar mes a mes (hasta el número de meses o 12, lo que sea mayor)
+    # Project month by month (up to number of months or 12, whichever is greater)
     meses_proyectar = max(meses, 12)
     proyeccion = []
 
@@ -63,10 +63,10 @@ def simular_compra(precio, meses):
         mes_fecha = fecha_actual + relativedelta(months=i)
         mes_nombre = mes_fecha.strftime('%Y-%m')
 
-        # Calcular ingresos del mes
+        # Calculate month income
         ingresos_mes = 0.0
         for ing in ingresos_rec:
-            # Verificar si está activo en este mes
+            # Verify if active in this month
             fecha_inicio = datetime.strptime(ing['fecha_inicio'], '%Y-%m-%d')
             if ing['fecha_fin'] and ing['fecha_fin'] != '2099-12-31':
                 fecha_fin = datetime.strptime(ing['fecha_fin'], '%Y-%m-%d')
@@ -77,7 +77,7 @@ def simular_compra(precio, meses):
 
             ingresos_mes += ing['monto']
 
-        # Calcular gastos del mes (créditos)
+        # Calculate month expenses (credits)
         gastos_mes = 0.0
         for credito in creditos:
             fecha_inicio = datetime.strptime(credito['fecha_inicio'], '%Y-%m-%d')
@@ -90,7 +90,7 @@ def simular_compra(precio, meses):
 
             gastos_mes += credito['monto_mensual']
 
-        # Calcular MSI existentes
+        # Calculate existing MSI
         for msi in msis:
             if msi['meses_restantes'] > 0:
                 fecha_primera = datetime.strptime(msi['fecha_primera_mensualidad'], '%Y-%m-%d')
@@ -99,16 +99,16 @@ def simular_compra(precio, meses):
                 if 0 <= meses_transcurridos < msi['meses']:
                     gastos_mes += msi['mensualidad']
 
-        # Calcular saldo SIN la nueva compra
+        # Calculate balance WITHOUT the new purchase
         saldo_sin_compra = saldo_sin_compra + ingresos_mes - gastos_mes
 
-        # Calcular saldo CON la nueva compra (restar mensualidad solo durante los meses MSI)
+        # Calculate balance WITH the new purchase (subtract monthly payment only during MSI months)
         if i < meses:
             saldo_con_compra = saldo_con_compra + ingresos_mes - gastos_mes - mensualidad
         else:
             saldo_con_compra = saldo_con_compra + ingresos_mes - gastos_mes
 
-        # Determinar estados
+        # Determine statuses
         if saldo_sin_compra > 10000:
             estado_sin = "verde"
         elif saldo_sin_compra > 0:
@@ -136,7 +136,7 @@ def simular_compra(precio, meses):
             'estado_con': estado_con
         })
 
-    # Determinar veredicto
+    # Determine verdict
     veredicto = "SI"
     problema_en_mes = None
     mes_critico = None

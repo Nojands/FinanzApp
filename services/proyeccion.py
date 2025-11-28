@@ -1,11 +1,11 @@
-# services/proyeccion.py - Lógica de proyección financiera
+# services/proyeccion.py - Financial projection logic
 import sqlite3
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from utils.helpers import parse_fecha
 from config import Config
 
-# Diccionario de nombres de meses en español
+# Dictionary of month names in Spanish
 MESES_ES = {
     1: 'enero',
     2: 'febrero',
@@ -23,18 +23,18 @@ MESES_ES = {
 
 def calcular_proyeccion_meses(meses_adelante=6):
     """
-    Calcular proyección de saldo para los próximos X meses
+    Calculate balance projection for the next X months
 
     Args:
-        meses_adelante: Número de meses a proyectar
+        meses_adelante: Number of months to project
 
     Returns:
-        list: Lista de diccionarios con proyección por mes
+        list: List of dictionaries with projection by month
     """
     conn = sqlite3.connect(Config.DATABASE_PATH)
     c = conn.cursor()
 
-    # Obtener balance inicial
+    # Get initial balance
     try:
         c.execute("SELECT balance_inicial FROM configuracion WHERE id=1")
         result = c.fetchone()
@@ -42,28 +42,28 @@ def calcular_proyeccion_meses(meses_adelante=6):
     except:
         saldo_actual = 0.0
 
-    # Obtener ingresos y gastos ya registrados
+    # Get already registered income and expenses
     c.execute('SELECT SUM(monto) FROM ingresos')
     total_ingresos = c.fetchone()[0] or 0
 
     c.execute('SELECT SUM(monto) FROM gastos')
     total_gastos = c.fetchone()[0] or 0
 
-    # Aplicar ingresos y gastos históricos al saldo
+    # Apply historical income and expenses to balance
     saldo_actual = saldo_actual + total_ingresos - total_gastos
 
-    # Guardar el balance actual para calcular porcentajes
+    # Save current balance to calculate percentages
     balance_actual = saldo_actual
 
-    # Obtener préstamos activos con fechas
+    # Get active loans with dates
     c.execute('SELECT nombre, monto_mensual, dia_pago, fecha_inicio, fecha_fin FROM prestamos WHERE activo=1')
     prestamos = c.fetchall()
 
-    # Obtener ingresos recurrentes activos con fechas y frecuencia
+    # Get active recurring income with dates and frequency
     c.execute('SELECT nombre, monto, dia_pago, fecha_inicio, fecha_fin, frecuencia, mes_especifico FROM ingresos_recurrentes WHERE activo=1')
     ingresos_rec = c.fetchall()
 
-    # Obtener TODAS las tarjetas activas con sus totales (gastos corrientes + MSI)
+    # Get ALL active cards with their totals (regular expenses + MSI)
     c.execute('''SELECT
                     tc.id,
                     tc.nombre,
@@ -78,7 +78,7 @@ def calcular_proyeccion_meses(meses_adelante=6):
 
     conn.close()
 
-    # Proyectar próximos meses
+    # Project upcoming months
     proyeccion = []
     fecha_actual = datetime.now()
 
@@ -86,10 +86,10 @@ def calcular_proyeccion_meses(meses_adelante=6):
         mes_futuro = fecha_actual + relativedelta(months=i)
         mes_nombre = f"{MESES_ES[mes_futuro.month].capitalize()} {mes_futuro.year}"
 
-        # Para comparación, usar solo año-mes (ignorar día)
+        # For comparison, use only year-month (ignore day)
         mes_futuro_comparacion = datetime(mes_futuro.year, mes_futuro.month, 1)
 
-        # Calcular INGRESOS del mes (solo si están activos en ese mes)
+        # Calculate month INCOME (only if active in that month)
         ingresos_mes = 0
         for ing in ingresos_rec:
             fecha_inicio = parse_fecha(ing[3])
@@ -98,15 +98,15 @@ def calcular_proyeccion_meses(meses_adelante=6):
             fecha_fin = parse_fecha(ing[4])
             fecha_fin_mes = datetime(fecha_fin.year, fecha_fin.month, 1)
 
-            # Verificar si el mes está dentro del rango
+            # Verify if month is within range
             if not (fecha_inicio_mes <= mes_futuro_comparacion <= fecha_fin_mes):
                 continue
 
-            # Obtener frecuencia (por defecto mensual si no existe)
+            # Get frequency (default monthly if doesn't exist)
             frecuencia = ing[5] if len(ing) > 5 and ing[5] else 'mensual'
             mes_especifico = ing[6] if len(ing) > 6 else None
 
-            # Determinar si aplica según frecuencia
+            # Determine if it applies according to frequency
             aplica = False
             meses_desde_inicio = (mes_futuro_comparacion.year - fecha_inicio_mes.year) * 12 + (mes_futuro_comparacion.month - fecha_inicio_mes.month)
 
@@ -134,7 +134,7 @@ def calcular_proyeccion_meses(meses_adelante=6):
             if aplica:
                 ingresos_mes += ing[1]
 
-        # Calcular GASTOS del mes (solo préstamos activos en ese mes)
+        # Calculate month EXPENSES (only loans active in that month)
         pago_prestamos = 0
         for prestamo in prestamos:
             fecha_inicio = parse_fecha(prestamo[3])
@@ -143,34 +143,34 @@ def calcular_proyeccion_meses(meses_adelante=6):
             fecha_fin = parse_fecha(prestamo[4])
             fecha_fin_mes = datetime(fecha_fin.year, fecha_fin.month, 1)
 
-            # Solo aplicar si el mes está dentro del rango
+            # Only apply if month is within range
             if fecha_inicio_mes <= mes_futuro_comparacion <= fecha_fin_mes:
                 pago_prestamos += prestamo[1]
 
-        # Calcular pagos de TARJETAS (gastos corrientes + MSI mensuales)
-        # Cada tarjeta paga MENSUALMENTE su total (gastos + MSI)
+        # Calculate CARD payments (regular expenses + monthly MSI)
+        # Each card pays MONTHLY its total (expenses + MSI)
         pago_tarjetas = 0
         for tarjeta in tarjetas:
-            total_tarjeta = tarjeta[3] + tarjeta[4]  # gastos_corrientes + msi
+            total_tarjeta = tarjeta[3] + tarjeta[4]  # regular_expenses + msi
             pago_tarjetas += total_tarjeta
 
         pago_total_mes = pago_prestamos + pago_tarjetas
 
-        # Actualizar saldo: + ingresos - gastos
+        # Update balance: + income - expenses
         saldo_actual = saldo_actual + ingresos_mes - pago_total_mes
 
-        # Determinar estado (semáforo) basado en porcentaje del balance actual
+        # Determine status (traffic light) based on percentage of current balance
         if balance_actual > 0:
             porcentaje_saldo = (saldo_actual / balance_actual) * 100
 
             if porcentaje_saldo >= 30:
-                estado = "verde"  # Mayor o igual al 30% del balance actual
+                estado = "verde"  # Greater than or equal to 30% of current balance
             elif porcentaje_saldo >= 5:
-                estado = "amarillo"  # Entre 5% y 29% del balance actual
+                estado = "amarillo"  # Between 5% and 29% of current balance
             else:
-                estado = "rojo"  # Menor al 5% del balance actual
+                estado = "rojo"  # Less than 5% of current balance
         else:
-            # Si el balance actual es 0 o negativo, usar saldo absoluto
+            # If current balance is 0 or negative, use absolute balance
             if saldo_actual > 1000:
                 estado = "verde"
             elif saldo_actual > 0:
@@ -191,15 +191,15 @@ def calcular_proyeccion_meses(meses_adelante=6):
 
 def calcular_proyeccion_quincenal(quincenas_adelante=12, fecha_pago_1=15, fecha_pago_2=30):
     """
-    Calcular proyección de saldo para las próximas X quincenas
+    Calculate balance projection for the next X biweekly periods
 
     Args:
-        quincenas_adelante: Número de quincenas a proyectar (default 12 = 6 meses)
-        fecha_pago_1: Día del mes del primer pago (ej: 10, 15)
-        fecha_pago_2: Día del mes del segundo pago (ej: 25, 30)
+        quincenas_adelante: Number of biweekly periods to project (default 12 = 6 months)
+        fecha_pago_1: Day of month for first payment (e.g., 10, 15)
+        fecha_pago_2: Day of month for second payment (e.g., 25, 30)
 
     Returns:
-        list: Lista de diccionarios con proyección por quincena
+        list: List of dictionaries with projection by biweekly period
     """
     conn = sqlite3.connect(Config.DATABASE_PATH)
     c = conn.cursor()
@@ -568,13 +568,13 @@ def calcular_proyeccion_quincenal(quincenas_adelante=12, fecha_pago_1=15, fecha_
 
 def calcular_quincenas_a_proyectar(min_quincenas=12):
     """
-    Calcular cuántas quincenas proyectar basándose en la última deuda (MSI o préstamo)
+    Calculate how many biweekly periods to project based on last debt (MSI or loan)
 
     Args:
-        min_quincenas: Mínimo de quincenas a proyectar si no hay deudas (default 12 = 6 meses)
+        min_quincenas: Minimum biweekly periods to project if no debts (default 12 = 6 months)
 
     Returns:
-        int: Número de quincenas a proyectar
+        int: Number of biweekly periods to project
     """
     conn = sqlite3.connect(Config.DATABASE_PATH)
     c = conn.cursor()
