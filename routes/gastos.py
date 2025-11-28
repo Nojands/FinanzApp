@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# routes/gastos.py - Rutas de gastos
+# routes/gastos.py - Expense routes
 from flask import request, redirect, flash
 from routes import gastos_bp
 from database import get_db_connection
@@ -8,7 +8,7 @@ from datetime import datetime
 
 @gastos_bp.route('/agregar_gasto', methods=['POST'])
 def agregar_gasto():
-    """Agregar nuevo gasto (efectivo, tarjeta, o compra MSI)"""
+    """Add new expense (cash, card, or MSI purchase)"""
     from config import Config
 
     try:
@@ -16,14 +16,14 @@ def agregar_gasto():
         tipo = request.form.get('tipo', 'efectivo')
         nombre = request.form.get('nombre', '').strip()
         monto_str = request.form.get('monto', '0')
-        es_msi = request.form.get('es_msi', '0')  # '1' si está marcado
+        es_msi = request.form.get('es_msi', '0')  # '1' if checked
         categoria_id = request.form.get('categoria_id', None)
         tarjeta_id = request.form.get('tarjeta_id', None)
 
-        # Obtener usuario_id
+        # Get usuario_id
         usuario_id = Config.DEFAULT_USER_ID if Config.SKIP_LOGIN else 1
 
-        # Validar datos
+        # Validate data
         valido_fecha, fecha, error_fecha = validar_fecha(fecha, "Fecha", requerido=True)
         if not valido_fecha:
             flash(f'Error: {error_fecha}', 'error')
@@ -42,7 +42,7 @@ def agregar_gasto():
         conn = get_db_connection()
         c = conn.cursor()
 
-        # Si es compra MSI
+        # If it's an MSI purchase
         if es_msi == '1':
             meses = int(request.form.get('meses', 3))
             fecha_primera = request.form.get('fecha_primera_msi', fecha)
@@ -59,10 +59,10 @@ def agregar_gasto():
             conn.commit()
             conn.close()
 
-            flash(f'Compra MSI agregada: {nombre} - {meses} meses de ${mensualidad:.2f}', 'success')
-            print(f"[MSI] Compra agregada: {nombre} - ${monto:.2f} en {meses} meses")
+            flash(f'MSI purchase added: {nombre} - {meses} months of ${mensualidad:.2f}', 'success')
+            print(f"[MSI] Purchase added: {nombre} - ${monto:.2f} in {meses} months")
 
-        # Si es gasto con tarjeta (sin MSI)
+        # If it's a card expense (without MSI)
         elif tipo == 'tarjeta' and tarjeta_id:
             c.execute('''INSERT INTO gastos_tdc
                         (tarjeta_id, fecha, concepto, monto, categoria_id, usuario_id)
@@ -71,22 +71,22 @@ def agregar_gasto():
             conn.commit()
             conn.close()
 
-            flash(f'Gasto con tarjeta agregado: {nombre} - ${monto:.2f}', 'success')
-            print(f"[TDC] Gasto agregado: {nombre} - ${monto:.2f} (Tarjeta ID: {tarjeta_id})")
+            flash(f'Card expense added: {nombre} - ${monto:.2f}', 'success')
+            print(f"[CARD] Expense added: {nombre} - ${monto:.2f} (Card ID: {tarjeta_id})")
 
-        # Gasto en efectivo/transferencia
+        # Cash/transfer expense
         else:
             c.execute('INSERT INTO gastos (fecha, tipo, nombre, monto, categoria_id, usuario_id) VALUES (?, ?, ?, ?, ?, ?)',
                      (fecha, tipo, nombre, monto, categoria_id if categoria_id else None, usuario_id))
             conn.commit()
             conn.close()
 
-            flash(f'Gasto agregado: {nombre} - ${monto:.2f}', 'success')
-            print(f"[GASTO] {nombre} - ${monto:.2f} ({tipo})")
+            flash(f'Expense added: {nombre} - ${monto:.2f}', 'success')
+            print(f"[EXPENSE] {nombre} - ${monto:.2f} ({tipo})")
 
     except Exception as e:
-        flash(f'Error al agregar gasto: {str(e)}', 'error')
-        print(f"[ERROR] Error al agregar gasto: {str(e)}")
+        flash(f'Error adding expense: {str(e)}', 'error')
+        print(f"[ERROR] Error adding expense: {str(e)}")
         import traceback
         traceback.print_exc()
 
@@ -95,7 +95,7 @@ def agregar_gasto():
 
 @gastos_bp.route('/borrar_gasto/<int:id>')
 def borrar_gasto(id):
-    """Borrar un gasto específico"""
+    """Delete specific expense"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
@@ -103,19 +103,19 @@ def borrar_gasto(id):
         conn.commit()
         conn.close()
 
-        flash('Gasto eliminado exitosamente', 'success')
-        print(f"[DELETE] Gasto {id} eliminado")
+        flash('Expense deleted successfully', 'success')
+        print(f"[DELETE] Expense {id} deleted")
 
     except Exception as e:
-        flash(f'Error al eliminar gasto: {str(e)}', 'error')
-        print(f"[ERROR] Error al eliminar gasto: {str(e)}")
+        flash(f'Error deleting expense: {str(e)}', 'error')
+        print(f"[ERROR] Error deleting expense: {str(e)}")
 
     return redirect('/')
 
 
 @gastos_bp.route('/borrar_gasto_tdc/<int:id>')
 def borrar_gasto_tdc(id):
-    """Borrar un gasto de tarjeta de crédito"""
+    """Delete credit card expense"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
@@ -123,11 +123,11 @@ def borrar_gasto_tdc(id):
         conn.commit()
         conn.close()
 
-        flash('Gasto de tarjeta eliminado exitosamente', 'success')
-        print(f"[DELETE] Gasto TDC {id} eliminado")
+        flash('Card expense deleted successfully', 'success')
+        print(f"[DELETE] Card expense {id} deleted")
 
     except Exception as e:
-        flash(f'Error al eliminar gasto de tarjeta: {str(e)}', 'error')
-        print(f"[ERROR] Error al eliminar gasto TDC: {str(e)}")
+        flash(f'Error deleting card expense: {str(e)}', 'error')
+        print(f"[ERROR] Error deleting card expense: {str(e)}")
 
     return redirect('/')

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-# routes/tarjetas.py - Rutas para gestión de Tarjetas de Crédito
+# routes/tarjetas.py - Credit card management routes
 from flask import request, redirect, url_for, jsonify
 from database import get_db_connection
 from . import tarjetas_bp
 
 @tarjetas_bp.route('/agregar_tarjeta', methods=['POST'])
 def agregar_tarjeta():
-    """Agregar nueva tarjeta de crédito"""
+    """Add new credit card"""
     try:
         nombre = request.form['nombre']
         fecha_corte = int(request.form['fecha_corte'])
@@ -23,17 +23,17 @@ def agregar_tarjeta():
         conn.commit()
         conn.close()
 
-        print(f"[TDC] Tarjeta agregada: {nombre} (Corte: {fecha_corte}, Pago: {fecha_pago_estimada})")
+        print(f"[CARD] Card added: {nombre} (Cutoff: {fecha_corte}, Payment: {fecha_pago_estimada})")
         return redirect(url_for('home'))
 
     except Exception as e:
-        print(f"[ERROR] Error al agregar tarjeta: {e}")
+        print(f"[ERROR] Error adding card: {e}")
         return redirect(url_for('home'))
 
 
 @tarjetas_bp.route('/desactivar_tarjeta/<int:id>')
 def desactivar_tarjeta(id):
-    """Desactivar tarjeta de crédito"""
+    """Deactivate credit card"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
@@ -43,39 +43,39 @@ def desactivar_tarjeta(id):
         conn.commit()
         conn.close()
 
-        print(f"[TDC] Tarjeta desactivada: ID {id}")
+        print(f"[CARD] Card deactivated: ID {id}")
         return redirect(url_for('home'))
 
     except Exception as e:
-        print(f"[ERROR] Error al desactivar tarjeta: {e}")
+        print(f"[ERROR] Error deactivating card: {e}")
         return redirect(url_for('home'))
 
 
 @tarjetas_bp.route('/borrar_tarjeta/<int:id>')
 def borrar_tarjeta(id):
-    """Eliminar tarjeta de crédito"""
+    """Delete credit card"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
 
-        # Eliminar también todos los gastos asociados
+        # Also delete all associated expenses
         c.execute('DELETE FROM gastos_tdc WHERE tarjeta_id=?', (id,))
         c.execute('DELETE FROM tarjetas_credito WHERE id=?', (id,))
 
         conn.commit()
         conn.close()
 
-        print(f"[DELETE] Tarjeta eliminada: ID {id}")
+        print(f"[DELETE] Card deleted: ID {id}")
         return redirect(url_for('home'))
 
     except Exception as e:
-        print(f"[ERROR] Error al borrar tarjeta: {e}")
+        print(f"[ERROR] Error deleting card: {e}")
         return redirect(url_for('home'))
 
 
 @tarjetas_bp.route('/agregar_gasto_tdc', methods=['POST'])
 def agregar_gasto_tdc():
-    """Agregar gasto a una tarjeta de crédito"""
+    """Add expense to credit card"""
     try:
         tarjeta_id = int(request.form['tarjeta_id'])
         fecha = request.form['fecha']
@@ -97,7 +97,7 @@ def agregar_gasto_tdc():
                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                       (tarjeta_id, fecha, concepto, monto, tipo, meses_msi, mensualidad_msi, meses_restantes, categoria_id))
 
-            print(f"[TDC MSI] Gasto agregado: {concepto} - ${monto:.2f} a {meses_msi} meses (${mensualidad_msi:.2f}/mes)")
+            print(f"[CARD MSI] Expense added: {concepto} - ${monto:.2f} in {meses_msi} months (${mensualidad_msi:.2f}/month)")
 
         else:
             c.execute('''INSERT INTO gastos_tdc
@@ -105,7 +105,7 @@ def agregar_gasto_tdc():
                          VALUES (?, ?, ?, ?, ?, ?)''',
                       (tarjeta_id, fecha, concepto, monto, tipo, categoria_id))
 
-            print(f"[TDC] Gasto corriente agregado: {concepto} - ${monto:.2f}")
+            print(f"[CARD] Regular expense added: {concepto} - ${monto:.2f}")
 
         conn.commit()
         conn.close()
@@ -113,13 +113,13 @@ def agregar_gasto_tdc():
         return redirect(url_for('home'))
 
     except Exception as e:
-        print(f"[ERROR] Error al agregar gasto TDC: {e}")
+        print(f"[ERROR] Error adding card expense: {e}")
         return redirect(url_for('home'))
 
 
 @tarjetas_bp.route('/pago_anticipado_tdc/<int:id>', methods=['POST'])
 def pago_anticipado_tdc(id):
-    """Reducir meses restantes de un gasto MSI"""
+    """Reduce remaining months of an MSI expense"""
     try:
         meses_a_pagar = int(request.form.get('meses_a_pagar', 1))
 
@@ -137,9 +137,9 @@ def pago_anticipado_tdc(id):
 
             if nuevos_meses == 0:
                 c.execute('UPDATE gastos_tdc SET activo=0 WHERE id=?', (id,))
-                print(f"[TDC MSI] Gasto MSI liquidado (ID {id})")
+                print(f"[CARD MSI] MSI expense paid off (ID {id})")
             else:
-                print(f"[TDC MSI] Pago anticipado: quedan {nuevos_meses} meses (ID {id})")
+                print(f"[CARD MSI] Early payment: {nuevos_meses} months remaining (ID {id})")
 
         conn.commit()
         conn.close()
@@ -147,13 +147,13 @@ def pago_anticipado_tdc(id):
         return redirect(url_for('home'))
 
     except Exception as e:
-        print(f"[ERROR] Error en pago anticipado TDC: {e}")
+        print(f"[ERROR] Error processing early payment: {e}")
         return redirect(url_for('home'))
 
 
 @tarjetas_bp.route('/api/tarjeta/<int:id>/gastos')
 def obtener_gastos_tarjeta(id):
-    """Obtener gastos de una tarjeta específica (API JSON)"""
+    """Get expenses for a specific card (JSON API)"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
@@ -182,5 +182,5 @@ def obtener_gastos_tarjeta(id):
         return jsonify(gastos)
 
     except Exception as e:
-        print(f"[ERROR] Error al obtener gastos: {e}")
+        print(f"[ERROR] Error fetching expenses: {e}")
         return jsonify([])

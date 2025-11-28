@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# routes/dashboard.py - Rutas del dashboard analítico
+# routes/dashboard.py - Analytics dashboard routes
 from flask import render_template
 from routes import dashboard_bp
 from database import get_db_connection
@@ -7,12 +7,12 @@ from services import calcular_proyeccion_quincenal
 
 @dashboard_bp.route('/dashboard')
 def dashboard():
-    """Dashboard analítico con gráficas y métricas"""
+    """Analytics dashboard with charts and metrics"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
 
-        # ========== BALANCE ACTUAL ==========
+        # ========== CURRENT BALANCE ==========
         c.execute('SELECT balance_inicial FROM configuracion WHERE id = 1')
         balance_inicial_row = c.fetchone()
         balance_inicial = balance_inicial_row['balance_inicial'] if balance_inicial_row else 0.0
@@ -27,25 +27,25 @@ def dashboard():
 
         balance_actual = balance_inicial + total_ingresos - total_gastos
 
-        # ========== COMPROMISOS MENSUALES ==========
-        # Préstamos (antes créditos_programados)
+        # ========== MONTHLY COMMITMENTS ==========
+        # Loans (formerly creditos_programados)
         c.execute('SELECT SUM(monto_mensual) as total FROM prestamos WHERE activo=1')
         total_prestamos_row = c.fetchone()
         total_prestamos = total_prestamos_row['total'] if total_prestamos_row['total'] else 0.0
 
-        # MSI de tarjetas
+        # Card MSI payments
         c.execute('SELECT SUM(mensualidad_msi) as total FROM gastos_tdc WHERE activo=1 AND tipo="msi"')
         total_msi_row = c.fetchone()
         total_msi = total_msi_row['total'] if total_msi_row['total'] else 0.0
 
         compromisos_mensuales = total_prestamos + total_msi
 
-        # ========== INGRESOS RECURRENTES ==========
+        # ========== RECURRING INCOME ==========
         c.execute('SELECT SUM(monto) as total FROM ingresos_recurrentes WHERE activo=1')
         ingresos_recurrentes_row = c.fetchone()
         ingresos_recurrentes = ingresos_recurrentes_row['total'] if ingresos_recurrentes_row['total'] else 0.0
 
-        # ========== PROYECCIÓN QUINCENAL (24 quincenas = 12 meses) ==========
+        # ========== BIWEEKLY PROJECTION (24 periods = 12 months) ==========
         proyeccion = calcular_proyeccion_quincenal(quincenas_adelante=24, fecha_pago_1=10, fecha_pago_2=25)
         if proyeccion and len(proyeccion) > 0:
             peor_quincena = min(proyeccion, key=lambda x: x['saldo_estimado'])
@@ -53,7 +53,7 @@ def dashboard():
         else:
             saldo_minimo_proyectado = balance_actual
 
-        # ========== GRÁFICA 1: INGRESOS VS GASTOS (Últimos 6 meses) ==========
+        # ========== CHART 1: INCOME VS EXPENSES (Last 6 months) ==========
         c.execute('''SELECT strftime('%Y-%m', fecha) as mes, SUM(monto) as total
                      FROM ingresos
                      GROUP BY mes
@@ -68,30 +68,30 @@ def dashboard():
                      LIMIT 6''')
         gastos_data = [dict(row) for row in c.fetchall()]
 
-        # ========== GRÁFICA 2: DISTRIBUCIÓN DE GASTOS POR TIPO ==========
+        # ========== CHART 2: EXPENSE DISTRIBUTION BY TYPE ==========
         c.execute('''SELECT tipo, SUM(monto) as total
                      FROM gastos
                      GROUP BY tipo''')
         gastos_por_tipo = [dict(row) for row in c.fetchall()]
 
-        # ========== GRÁFICA 3: PROYECCIÓN SEMÁFORO ==========
-        # Ya tenemos 'proyeccion' calculado arriba
+        # ========== CHART 3: TRAFFIC LIGHT PROJECTION ==========
+        # We already have 'proyeccion' calculated above
 
-        # ========== GRÁFICA 4: TOP 5 GASTOS MAYORES ==========
+        # ========== CHART 4: TOP 5 LARGEST EXPENSES ==========
         c.execute('''SELECT nombre, monto, fecha
                      FROM gastos
                      ORDER BY monto DESC
                      LIMIT 5''')
         top_gastos = [dict(row) for row in c.fetchall()]
 
-        # ========== TABLA 1: PRÉSTAMOS ACTIVOS ==========
+        # ========== TABLE 1: ACTIVE LOANS ==========
         c.execute('''SELECT nombre, monto_mensual, dia_pago, fecha_inicio, fecha_fin
                      FROM prestamos
                      WHERE activo=1
                      ORDER BY dia_pago''')
         creditos_activos = [dict(row) for row in c.fetchall()]
 
-        # ========== TABLA 2: MSI ACTIVOS ==========
+        # ========== TABLE 2: ACTIVE MSI PURCHASES ==========
         c.execute('''SELECT
                         gt.concepto as producto,
                         gt.monto as precio_total,
@@ -103,14 +103,14 @@ def dashboard():
                      ORDER BY gt.meses_restantes DESC''')
         compras_msi_activas = [dict(row) for row in c.fetchall()]
 
-        # ========== TABLA 3: INGRESOS RECURRENTES ==========
+        # ========== TABLE 3: RECURRING INCOME ==========
         c.execute('''SELECT nombre, monto, dia_pago, fecha_inicio, fecha_fin
                      FROM ingresos_recurrentes
                      WHERE activo=1
                      ORDER BY dia_pago''')
         ingresos_rec_lista = [dict(row) for row in c.fetchall()]
 
-        # ========== TABLA 4: ÚLTIMAS TRANSACCIONES ==========
+        # ========== TABLE 4: LATEST TRANSACTIONS ==========
         c.execute('''SELECT fecha, concepto as nombre, monto, 'Ingreso' as tipo
                      FROM ingresos
                      UNION ALL
@@ -122,7 +122,7 @@ def dashboard():
 
         conn.close()
 
-        # Renderizar template con todos los datos
+        # Render template with all data
         return render_template('dashboard.html',
                              balance_actual=balance_actual,
                              balance_inicial=balance_inicial,
@@ -145,5 +145,5 @@ def dashboard():
                              ultimas_transacciones=ultimas_transacciones)
 
     except Exception as e:
-        print(f"[ERROR] Error al cargar dashboard: {str(e)}")
-        return f"Error al cargar dashboard: {str(e)}", 500
+        print(f"[ERROR] Error loading dashboard: {str(e)}")
+        return f"Error loading dashboard: {str(e)}", 500

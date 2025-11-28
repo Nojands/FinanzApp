@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# routes/ingresos.py - Rutas de ingresos y ingresos recurrentes
+# routes/ingresos.py - Income and recurring income routes
 from flask import request, redirect, flash
 from routes import ingresos_bp
 from database import get_db_connection
@@ -8,15 +8,15 @@ from config import Config
 
 @ingresos_bp.route('/agregar_ingreso', methods=['POST'])
 def agregar_ingreso():
-    """Agregar nuevo ingreso"""
+    """Add new income"""
     try:
-        # Obtener datos del formulario
+        # Get form data
         fecha = request.form.get('fecha', '').strip()
         concepto = request.form.get('concepto', '').strip()
         monto_str = request.form.get('monto', '0')
         categoria_id = request.form.get('categoria_id', None)
 
-        # Validar datos
+        # Validate data
         valido_fecha, fecha, error_fecha = validar_fecha(fecha, "Fecha", requerido=True)
         if not valido_fecha:
             flash(f'Error: {error_fecha}', 'error')
@@ -32,7 +32,7 @@ def agregar_ingreso():
             flash(f'Error: {error_monto}', 'error')
             return redirect('/')
 
-        # Insertar en la base de datos
+        # Insert into database
         conn = get_db_connection()
         c = conn.cursor()
         c.execute('INSERT INTO ingresos (fecha, concepto, monto, categoria_id) VALUES (?, ?, ?, ?)',
@@ -40,19 +40,19 @@ def agregar_ingreso():
         conn.commit()
         conn.close()
 
-        flash(f'Ingreso agregado exitosamente: {concepto} - ${monto:.2f}', 'success')
-        print(f"[INGRESO] {concepto} - ${monto:.2f}")
+        flash(f'Income added successfully: {concepto} - ${monto:.2f}', 'success')
+        print(f"[INCOME] {concepto} - ${monto:.2f}")
 
     except Exception as e:
-        flash(f'Error al agregar ingreso: {str(e)}', 'error')
-        print(f"[ERROR] Error al agregar ingreso: {str(e)}")
+        flash(f'Error adding income: {str(e)}', 'error')
+        print(f"[ERROR] Error adding income: {str(e)}")
 
     return redirect('/')
 
 
 @ingresos_bp.route('/borrar_ingreso/<int:id>')
 def borrar_ingreso(id):
-    """Borrar un ingreso específico"""
+    """Delete specific income entry"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
@@ -60,21 +60,21 @@ def borrar_ingreso(id):
         conn.commit()
         conn.close()
 
-        flash(f'Ingreso eliminado exitosamente', 'success')
-        print(f"[DELETE] Ingreso {id} eliminado")
+        flash(f'Income deleted successfully', 'success')
+        print(f"[DELETE] Income {id} deleted")
 
     except Exception as e:
-        flash(f'Error al eliminar ingreso: {str(e)}', 'error')
-        print(f"[ERROR] Error al eliminar ingreso: {str(e)}")
+        flash(f'Error deleting income: {str(e)}', 'error')
+        print(f"[ERROR] Error deleting income: {str(e)}")
 
     return redirect('/')
 
 
 @ingresos_bp.route('/agregar_ingreso_recurrente', methods=['POST'])
 def agregar_ingreso_recurrente():
-    """Agregar ingreso recurrente con diferentes frecuencias"""
+    """Add recurring income with different frequencies"""
     try:
-        # Obtener datos del formulario
+        # Get form data
         nombre = request.form.get('nombre', '').strip()
         monto_str = request.form.get('monto', '0')
         dia_pago_str = request.form.get('dia_pago', '1')
@@ -83,27 +83,27 @@ def agregar_ingreso_recurrente():
         frecuencia = request.form.get('frecuencia', 'mensual')
         mes_especifico_str = request.form.get('mes_especifico', '')
 
-        # Validar nombre
+        # Validate name
         valido_nombre, nombre, error_nombre = validar_texto(nombre, "Nombre", min_length=1, max_length=200)
         if not valido_nombre:
             flash(f'Error: {error_nombre}', 'error')
             return redirect('/')
 
-        # Validar monto
+        # Validate amount
         valido_monto, monto, error_monto = validar_monto(monto_str, "Monto", minimo=0.01)
         if not valido_monto:
             flash(f'Error: {error_monto}', 'error')
             return redirect('/')
 
-        # Validar día de pago
+        # Validate payment day
         valido_dia, dia_pago, error_dia = validar_dia_mes(dia_pago_str, "Día de pago")
         if not valido_dia:
             flash(f'Error: {error_dia}', 'error')
             return redirect('/')
 
-        # Validar/calcular fecha de inicio
+        # Validate/calculate start date
         if not fecha_inicio or fecha_inicio == '':
-            # Calcular inteligentemente
+            # Calculate intelligently
             fecha_inicio = calcular_fecha_inicio_inteligente(dia_pago)
         else:
             valido_fecha_inicio, fecha_inicio, error_fecha_inicio = validar_fecha(fecha_inicio, "Fecha de inicio")
@@ -111,7 +111,7 @@ def agregar_ingreso_recurrente():
                 flash(f'Error: {error_fecha_inicio}', 'error')
                 return redirect('/')
 
-        # Validar fecha fin (opcional)
+        # Validate end date (optional)
         if not fecha_fin or fecha_fin == '':
             fecha_fin = Config.FECHA_INDEFINIDA
         else:
@@ -120,19 +120,19 @@ def agregar_ingreso_recurrente():
                 flash(f'Error: {error_fecha_fin}', 'error')
                 return redirect('/')
 
-        # Validar mes específico para frecuencia anual
+        # Validate specific month for annual frequency
         mes_especifico = None
         if frecuencia == 'anual' and mes_especifico_str:
             try:
                 mes_especifico = int(mes_especifico_str)
                 if mes_especifico < 1 or mes_especifico > 12:
-                    flash('Error: El mes debe estar entre 1 y 12', 'error')
+                    flash('Error: Month must be between 1 and 12', 'error')
                     return redirect('/')
             except:
-                flash('Error: Mes especifico invalido', 'error')
+                flash('Error: Invalid specific month', 'error')
                 return redirect('/')
 
-        # Insertar en la base de datos
+        # Insert into database
         conn = get_db_connection()
         c = conn.cursor()
         c.execute('''INSERT INTO ingresos_recurrentes
@@ -142,30 +142,30 @@ def agregar_ingreso_recurrente():
         conn.commit()
         conn.close()
 
-        # Mensaje personalizado según frecuencia
+        # Customized message based on frequency
         frecuencia_texto = {
-            'semanal': 'cada semana',
-            'quincenal': 'cada quincena',
-            'mensual': 'cada mes',
-            'bimestral': 'cada 2 meses',
-            'trimestral': 'cada 3 meses',
-            'semestral': 'cada 6 meses',
-            'anual': 'cada año'
-        }.get(frecuencia, 'periodicamente')
+            'semanal': 'every week',
+            'quincenal': 'every two weeks',
+            'mensual': 'every month',
+            'bimestral': 'every 2 months',
+            'trimestral': 'every 3 months',
+            'semestral': 'every 6 months',
+            'anual': 'every year'
+        }.get(frecuencia, 'periodically')
 
-        flash(f'Ingreso recurrente agregado: {nombre} - ${monto:.2f} {frecuencia_texto}', 'success')
-        print(f"[RECURRENTE] Ingreso agregado: {nombre} - ${monto:.2f} {frecuencia_texto} (desde {fecha_inicio} hasta {fecha_fin})")
+        flash(f'Recurring income added: {nombre} - ${monto:.2f} {frecuencia_texto}', 'success')
+        print(f"[RECURRING] Income added: {nombre} - ${monto:.2f} {frecuencia_texto} (from {fecha_inicio} to {fecha_fin})")
 
     except Exception as e:
-        flash(f'Error al agregar ingreso recurrente: {str(e)}', 'error')
-        print(f"[ERROR] Error al agregar ingreso recurrente: {str(e)}")
+        flash(f'Error adding recurring income: {str(e)}', 'error')
+        print(f"[ERROR] Error adding recurring income: {str(e)}")
 
     return redirect('/')
 
 
 @ingresos_bp.route('/desactivar_ingreso_recurrente/<int:id>')
 def desactivar_ingreso_recurrente(id):
-    """Desactivar un ingreso recurrente"""
+    """Deactivate recurring income"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
@@ -173,19 +173,19 @@ def desactivar_ingreso_recurrente(id):
         conn.commit()
         conn.close()
 
-        flash('Ingreso recurrente desactivado', 'success')
-        print(f"[DESACTIVAR] Ingreso recurrente {id} desactivado")
+        flash('Recurring income deactivated', 'success')
+        print(f"[DEACTIVATE] Recurring income {id} deactivated")
 
     except Exception as e:
-        flash(f'Error al desactivar ingreso recurrente: {str(e)}', 'error')
-        print(f"[ERROR] Error al desactivar ingreso recurrente: {str(e)}")
+        flash(f'Error deactivating recurring income: {str(e)}', 'error')
+        print(f"[ERROR] Error deactivating recurring income: {str(e)}")
 
     return redirect('/')
 
 
 @ingresos_bp.route('/borrar_ingreso_recurrente/<int:id>')
 def borrar_ingreso_recurrente(id):
-    """Borrar completamente un ingreso recurrente"""
+    """Completely delete recurring income"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
@@ -193,11 +193,11 @@ def borrar_ingreso_recurrente(id):
         conn.commit()
         conn.close()
 
-        flash('Ingreso recurrente eliminado', 'success')
-        print(f"[DELETE] Ingreso recurrente {id} eliminado")
+        flash('Recurring income deleted', 'success')
+        print(f"[DELETE] Recurring income {id} deleted")
 
     except Exception as e:
-        flash(f'Error al eliminar ingreso recurrente: {str(e)}', 'error')
-        print(f"[ERROR] Error al eliminar ingreso recurrente: {str(e)}")
+        flash(f'Error deleting recurring income: {str(e)}', 'error')
+        print(f"[ERROR] Error deleting recurring income: {str(e)}")
 
     return redirect('/')

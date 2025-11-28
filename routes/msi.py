@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# routes/msi.py - Rutas de compras MSI (Meses Sin Intereses)
+# routes/msi.py - MSI (interest-free installments) purchase routes
 from flask import request, redirect, flash, jsonify
 from routes import msi_bp
 from database import get_db_connection
@@ -8,26 +8,26 @@ from datetime import datetime
 
 @msi_bp.route('/agregar_compra_msi', methods=['POST'])
 def agregar_compra_msi():
-    """Agregar compra en MSI confirmada"""
+    """Add confirmed MSI purchase"""
     try:
         producto = request.form.get('producto', '').strip()
         precio_str = request.form.get('precio', '0')
         meses = int(request.form.get('meses', 3))
         fecha_primera = request.form.get('fecha_primera', '').strip()
 
-        # Validar producto
+        # Validate product
         valido_producto, producto, error_producto = validar_texto(producto, "Producto")
         if not valido_producto:
             flash(f'Error: {error_producto}', 'error')
             return redirect('/')
 
-        # Validar precio
+        # Validate price
         valido_precio, precio, error_precio = validar_monto(precio_str, "Precio", minimo=0.01)
         if not valido_precio:
             flash(f'Error: {error_precio}', 'error')
             return redirect('/')
 
-        # Si fecha_primera está vacía, usar fecha actual
+        # If fecha_primera is empty, use current date
         if not fecha_primera or fecha_primera == '':
             fecha_primera = datetime.now().strftime('%Y-%m-%d')
 
@@ -42,30 +42,30 @@ def agregar_compra_msi():
         conn.commit()
         conn.close()
 
-        flash(f'Compra MSI agregada: {producto} - {meses} meses de ${mensualidad:.2f}', 'success')
-        print(f"[OK] Compra MSI agregada: {producto} - ${precio:.2f} en {meses} meses")
+        flash(f'MSI purchase added: {producto} - {meses} months of ${mensualidad:.2f}', 'success')
+        print(f"[OK] MSI purchase added: {producto} - ${precio:.2f} in {meses} months")
 
     except Exception as e:
-        flash(f'Error al agregar compra MSI: {str(e)}', 'error')
-        print(f"[ERROR] Error al agregar compra MSI: {str(e)}")
+        flash(f'Error adding MSI purchase: {str(e)}', 'error')
+        print(f"[ERROR] Error adding MSI purchase: {str(e)}")
 
     return redirect('/')
 
 
 @msi_bp.route('/simular_compra', methods=['POST'])
 def simular_compra():
-    """Simular una compra MSI y ver su impacto"""
+    """Simulate MSI purchase and see its impact"""
     try:
         from services import simular_compra as simular_compra_servicio
 
         precio = float(request.json.get('precio', 0))
         meses = int(request.json.get('meses', 3))
-        producto = request.json.get('producto', 'Sin nombre').strip()
+        producto = request.json.get('producto', 'Unnamed').strip()
 
-        # Simular la compra
+        # Simulate purchase
         resultado = simular_compra_servicio(precio, meses)
 
-        # Guardar en historial
+        # Save to history
         conn = get_db_connection()
         c = conn.cursor()
 
@@ -87,12 +87,12 @@ def simular_compra():
         conn.commit()
         conn.close()
 
-        print(f"[OK] Simulacion guardada: {producto} - ${precio:.2f} en {meses} MSI - Veredicto: {resultado['veredicto']}")
+        print(f"[OK] Simulation saved: {producto} - ${precio:.2f} in {meses} MSI - Verdict: {resultado['veredicto']}")
 
         return jsonify(resultado)
 
     except Exception as e:
-        print(f"[ERROR] Error en simulador: {str(e)}")
+        print(f"[ERROR] Simulator error: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -104,47 +104,47 @@ def simular_compra():
 
 @msi_bp.route('/pago_anticipado_msi/<int:id>', methods=['POST'])
 def pago_anticipado_msi(id):
-    """Registrar pago anticipado de MSI (reducir meses restantes)"""
+    """Register early MSI payment (reduce remaining months)"""
     try:
         meses_pagados = int(request.form.get('meses_pagados', 1))
 
         conn = get_db_connection()
         c = conn.cursor()
 
-        # Obtener meses restantes actuales
+        # Get current remaining months
         c.execute('SELECT meses_restantes FROM compras_msi WHERE id=?', (id,))
         result = c.fetchone()
 
         if not result:
-            flash('Compra MSI no encontrada', 'error')
+            flash('MSI purchase not found', 'error')
             return redirect('/')
 
         meses_restantes = result[0]
         nuevos_meses = max(0, meses_restantes - meses_pagados)
 
-        # Actualizar
+        # Update
         c.execute('UPDATE compras_msi SET meses_restantes=? WHERE id=?', (nuevos_meses, id))
 
-        # Si llega a 0, desactivar
+        # If it reaches 0, deactivate
         if nuevos_meses == 0:
             c.execute('UPDATE compras_msi SET activo=0 WHERE id=?', (id,))
 
         conn.commit()
         conn.close()
 
-        flash(f'Pago anticipado registrado: {meses_pagados} meses', 'success')
-        print(f"[OK] Pago anticipado registrado: {meses_pagados} meses")
+        flash(f'Early payment registered: {meses_pagados} months', 'success')
+        print(f"[OK] Early payment registered: {meses_pagados} months")
 
     except Exception as e:
-        flash(f'Error al registrar pago anticipado: {str(e)}', 'error')
-        print(f"[ERROR] Error al registrar pago anticipado: {str(e)}")
+        flash(f'Error registering early payment: {str(e)}', 'error')
+        print(f"[ERROR] Error registering early payment: {str(e)}")
 
     return redirect('/')
 
 
 @msi_bp.route('/desactivar_msi/<int:id>')
 def desactivar_msi(id):
-    """Desactivar una compra MSI"""
+    """Deactivate MSI purchase"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
@@ -152,19 +152,19 @@ def desactivar_msi(id):
         conn.commit()
         conn.close()
 
-        flash('Compra MSI desactivada', 'success')
-        print(f"[OK] Compra MSI {id} desactivada")
+        flash('MSI purchase deactivated', 'success')
+        print(f"[OK] MSI purchase {id} deactivated")
 
     except Exception as e:
-        flash(f'Error al desactivar compra MSI: {str(e)}', 'error')
-        print(f"[ERROR] Error al desactivar compra MSI: {str(e)}")
+        flash(f'Error deactivating MSI purchase: {str(e)}', 'error')
+        print(f"[ERROR] Error deactivating MSI purchase: {str(e)}")
 
     return redirect('/')
 
 
 @msi_bp.route('/borrar_msi/<int:id>')
 def borrar_msi(id):
-    """Borrar completamente una compra MSI"""
+    """Completely delete MSI purchase"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
@@ -172,11 +172,11 @@ def borrar_msi(id):
         conn.commit()
         conn.close()
 
-        flash('Compra MSI eliminada', 'success')
-        print(f"[OK] Compra MSI {id} eliminada")
+        flash('MSI purchase deleted', 'success')
+        print(f"[OK] MSI purchase {id} deleted")
 
     except Exception as e:
-        flash(f'Error al eliminar compra MSI: {str(e)}', 'error')
-        print(f"[ERROR] Error al eliminar compra MSI: {str(e)}")
+        flash(f'Error deleting MSI purchase: {str(e)}', 'error')
+        print(f"[ERROR] Error deleting MSI purchase: {str(e)}")
 
     return redirect('/')

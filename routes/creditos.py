@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# routes/creditos.py - Rutas de créditos programados
+# routes/creditos.py - Scheduled credit routes
 from flask import request, redirect, flash
 from routes import creditos_bp
 from database import get_db_connection
@@ -8,7 +8,7 @@ from config import Config
 
 @creditos_bp.route('/agregar_credito', methods=['POST'])
 def agregar_credito():
-    """Agregar crédito programado"""
+    """Add scheduled credit"""
     try:
         nombre = request.form.get('nombre', '').strip()
         monto_str = request.form.get('monto', '0')
@@ -16,39 +16,39 @@ def agregar_credito():
         fecha_inicio = request.form.get('fecha_inicio', '').strip()
         fecha_fin = request.form.get('fecha_fin', '').strip()
 
-        # Campos opcionales
+        # Optional fields
         fecha_corte = int(request.form.get('fecha_corte', 0))
         fecha_limite_pago = int(request.form.get('fecha_limite_pago', 0))
         fecha_apartado = int(request.form.get('fecha_apartado', 0))
         dias_alerta = int(request.form.get('dias_alerta', 3))
         notas = request.form.get('notas', '')
 
-        # Validar nombre
+        # Validate name
         valido_nombre, nombre, error_nombre = validar_texto(nombre, "Nombre")
         if not valido_nombre:
             flash(f'Error: {error_nombre}', 'error')
             return redirect('/')
 
-        # Validar monto
+        # Validate amount
         valido_monto, monto, error_monto = validar_monto(monto_str, "Monto", minimo=0.01)
         if not valido_monto:
             flash(f'Error: {error_monto}', 'error')
             return redirect('/')
 
-        # Validar día de pago
+        # Validate payment day
         valido_dia, dia_pago, error_dia = validar_dia_mes(dia_pago_str, "Día de pago")
         if not valido_dia:
             flash(f'Error: {error_dia}', 'error')
             return redirect('/')
 
-        # Si fecha_limite_pago no está configurado, usar dia_pago
+        # If fecha_limite_pago is not set, use dia_pago
         if fecha_limite_pago == 0:
             fecha_limite_pago = dia_pago
 
         if fecha_apartado == 0:
             fecha_apartado = dia_pago
 
-        # Validar/calcular fecha de inicio
+        # Validate/calculate start date
         if not fecha_inicio or fecha_inicio == '':
             fecha_inicio = calcular_fecha_inicio_inteligente(dia_pago, fecha_limite_pago)
         else:
@@ -57,7 +57,7 @@ def agregar_credito():
                 flash(f'Error: {error_fecha_inicio}', 'error')
                 return redirect('/')
 
-        # Validar fecha fin (opcional)
+        # Validate end date (optional)
         if not fecha_fin or fecha_fin == '':
             fecha_fin = Config.FECHA_INDEFINIDA
         else:
@@ -66,7 +66,7 @@ def agregar_credito():
                 flash(f'Error: {error_fecha_fin}', 'error')
                 return redirect('/')
 
-        # Insertar en BD
+        # Insert into database
         conn = get_db_connection()
         c = conn.cursor()
         c.execute('''INSERT INTO creditos_programados
@@ -78,19 +78,19 @@ def agregar_credito():
         conn.commit()
         conn.close()
 
-        flash(f'Crédito agregado: {nombre} - ${monto:.2f}/mes', 'success')
-        print(f"[CREDITO] {nombre} - ${monto:.2f}/mes (dia {dia_pago})")
+        flash(f'Credit added: {nombre} - ${monto:.2f}/month', 'success')
+        print(f"[CREDIT] {nombre} - ${monto:.2f}/month (day {dia_pago})")
 
     except Exception as e:
-        flash(f'Error al agregar crédito: {str(e)}', 'error')
-        print(f"[ERROR] Error al agregar credito: {str(e)}")
+        flash(f'Error adding credit: {str(e)}', 'error')
+        print(f"[ERROR] Error adding credit: {str(e)}")
 
     return redirect('/')
 
 
 @creditos_bp.route('/desactivar_credito/<int:id>')
 def desactivar_credito(id):
-    """Desactivar (soft delete) un crédito"""
+    """Deactivate (soft delete) credit"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
@@ -98,19 +98,19 @@ def desactivar_credito(id):
         conn.commit()
         conn.close()
 
-        flash('Crédito desactivado', 'success')
-        print(f"[DESACTIVAR] Credito {id} desactivado")
+        flash('Credit deactivated', 'success')
+        print(f"[DEACTIVATE] Credit {id} deactivated")
 
     except Exception as e:
-        flash(f'Error al desactivar crédito: {str(e)}', 'error')
-        print(f"[ERROR] Error al desactivar credito: {str(e)}")
+        flash(f'Error deactivating credit: {str(e)}', 'error')
+        print(f"[ERROR] Error deactivating credit: {str(e)}")
 
     return redirect('/')
 
 
 @creditos_bp.route('/borrar_credito/<int:id>')
 def borrar_credito(id):
-    """Borrar completamente un crédito"""
+    """Completely delete credit"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
@@ -118,11 +118,11 @@ def borrar_credito(id):
         conn.commit()
         conn.close()
 
-        flash('Crédito eliminado', 'success')
-        print(f"[DELETE] Credito {id} eliminado")
+        flash('Credit deleted', 'success')
+        print(f"[DELETE] Credit {id} deleted")
 
     except Exception as e:
-        flash(f'Error al eliminar crédito: {str(e)}', 'error')
-        print(f"[ERROR] Error al eliminar credito: {str(e)}")
+        flash(f'Error deleting credit: {str(e)}', 'error')
+        print(f"[ERROR] Error deleting credit: {str(e)}")
 
     return redirect('/')

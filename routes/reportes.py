@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# routes/reportes.py - Rutas de reportes y estadísticas
+# routes/reportes.py - Reports and statistics routes
 from flask import jsonify
 from routes import reportes_bp
 from database import get_db_connection
@@ -7,12 +7,12 @@ from datetime import datetime, timedelta
 
 @reportes_bp.route('/api/reportes/gastos_por_categoria')
 def gastos_por_categoria():
-    """Obtener gastos agrupados por categoría"""
+    """Get expenses grouped by category"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
 
-        # Obtener gastos con categorías
+        # Get expenses with categories
         c.execute('''
             SELECT
                 c.nombre as categoria,
@@ -28,11 +28,11 @@ def gastos_por_categoria():
         datos = c.fetchall()
         conn.close()
 
-        # Convertir a diccionario
+        # Convert to dictionary
         resultado = []
         for row in datos:
             resultado.append({
-                'categoria': row['categoria'] if row['categoria'] else 'Sin categoría',
+                'categoria': row['categoria'] if row['categoria'] else 'Uncategorized',
                 'color': row['color'] if row['color'] else '#6c757d',
                 'total': float(row['total']),
                 'cantidad': row['cantidad']
@@ -46,12 +46,12 @@ def gastos_por_categoria():
 
 @reportes_bp.route('/api/reportes/ingresos_por_categoria')
 def ingresos_por_categoria():
-    """Obtener ingresos agrupados por categoría"""
+    """Get income grouped by category"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
 
-        # Obtener ingresos con categorías
+        # Get income with categories
         c.execute('''
             SELECT
                 c.nombre as categoria,
@@ -67,11 +67,11 @@ def ingresos_por_categoria():
         datos = c.fetchall()
         conn.close()
 
-        # Convertir a diccionario
+        # Convert to dictionary
         resultado = []
         for row in datos:
             resultado.append({
-                'categoria': row['categoria'] if row['categoria'] else 'Sin categoría',
+                'categoria': row['categoria'] if row['categoria'] else 'Uncategorized',
                 'color': row['color'] if row['color'] else '#6c757d',
                 'total': float(row['total']),
                 'cantidad': row['cantidad']
@@ -85,16 +85,16 @@ def ingresos_por_categoria():
 
 @reportes_bp.route('/api/reportes/tendencia_mensual')
 def tendencia_mensual():
-    """Obtener tendencia mensual de ingresos y gastos (últimos 12 meses)"""
+    """Get monthly trend of income and expenses (last 12 months)"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
 
-        # Calcular fecha de inicio (12 meses atrás)
+        # Calculate start date (12 months ago)
         fecha_fin = datetime.now()
         fecha_inicio = fecha_fin - timedelta(days=365)
 
-        # Obtener ingresos por mes
+        # Get income by month
         c.execute('''
             SELECT
                 strftime('%Y-%m', fecha) as mes,
@@ -107,7 +107,7 @@ def tendencia_mensual():
 
         ingresos_mes = {row['mes']: float(row['total']) for row in c.fetchall()}
 
-        # Obtener gastos por mes
+        # Get expenses by month
         c.execute('''
             SELECT
                 strftime('%Y-%m', fecha) as mes,
@@ -122,7 +122,7 @@ def tendencia_mensual():
 
         conn.close()
 
-        # Generar lista de todos los meses
+        # Generate list of all months
         meses = []
         mes_actual = fecha_inicio
         while mes_actual <= fecha_fin:
@@ -135,7 +135,7 @@ def tendencia_mensual():
                 'balance': ingresos_mes.get(mes_str, 0) - gastos_mes.get(mes_str, 0)
             })
 
-            # Siguiente mes
+            # Next month
             if mes_actual.month == 12:
                 mes_actual = mes_actual.replace(year=mes_actual.year + 1, month=1)
             else:
@@ -149,32 +149,32 @@ def tendencia_mensual():
 
 @reportes_bp.route('/api/reportes/resumen')
 def resumen():
-    """Obtener resumen general de finanzas"""
+    """Get general financial summary"""
     try:
         conn = get_db_connection()
         c = conn.cursor()
 
-        # Total ingresos
+        # Total income
         c.execute('SELECT SUM(monto) as total FROM ingresos')
         total_ingresos = c.fetchone()['total'] or 0
 
-        # Total gastos
+        # Total expenses
         c.execute('SELECT SUM(monto) as total FROM gastos')
         total_gastos = c.fetchone()['total'] or 0
 
-        # Balance inicial
+        # Initial balance
         c.execute('SELECT balance_inicial FROM configuracion WHERE id=1')
         balance_inicial = c.fetchone()['balance_inicial'] or 0
 
-        # Créditos activos
+        # Active credits
         c.execute('SELECT COUNT(*) as total FROM creditos_programados WHERE activo=1')
         creditos_activos = c.fetchone()['total']
 
-        # MSI activos
+        # Active MSI purchases
         c.execute('SELECT COUNT(*) as total FROM compras_msi WHERE activo=1')
         msi_activos = c.fetchone()['total']
 
-        # Promedio mensual de gastos (últimos 6 meses)
+        # Average monthly expenses (last 6 months)
         fecha_limite = (datetime.now() - timedelta(days=180)).strftime('%Y-%m-%d')
         c.execute('''
             SELECT AVG(total_mes) as promedio
