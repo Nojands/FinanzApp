@@ -321,6 +321,96 @@ def init_db():
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)''',
                  (2, '2025-09-10', 'Celular', 18000.00, 'msi', 18, 1000.00, 15))
 
+        # Cashback entries
+        c.execute('''INSERT INTO cashback
+                    (source, amount, date_earned, date_received, status, card_id, notes, active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)''',
+                 ('Amazon Cashback', 125.50, '2025-10-15', '2025-11-01', 'received', 1, '5% cashback on electronics purchase'))
+
+        c.execute('''INSERT INTO cashback
+                    (source, amount, date_earned, date_received, status, card_id, notes, active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)''',
+                 ('Walmart Cashback', 85.00, '2025-11-20', None, 'pending', 2, '2% cashback on groceries'))
+
+        c.execute('''INSERT INTO cashback
+                    (source, amount, date_earned, date_received, status, card_id, notes, active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)''',
+                 ('Uber Cashback', 45.75, '2025-10-05', '2025-10-20', 'received', 1, 'Monthly ride rewards'))
+
+        c.execute('''INSERT INTO cashback
+                    (source, amount, date_earned, date_received, status, notes, active)
+                    VALUES (?, ?, ?, ?, ?, ?, 1)''',
+                 ('Netflix Promo', 30.00, '2025-11-15', None, 'pending', 'Credit card promotion'))
+
+        c.execute('''INSERT INTO cashback
+                    (source, amount, date_earned, date_received, status, card_id, notes, active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)''',
+                 ('Gas Station Rewards', 95.25, '2025-09-28', '2025-10-15', 'received', 2, '3% cashback on fuel'))
+
+        # Investments
+        c.execute('''INSERT INTO investments
+                    (name, investment_type, initial_amount, current_value, start_date, expected_return_rate, platform, notes, status, active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)''',
+                 ('Apple Stock (AAPL)', 'Stocks', 10000.00, 12500.00, '2024-06-15', 15.0, 'Robinhood', 'Tech stock long-term hold', 'active'))
+
+        c.execute('''INSERT INTO investments
+                    (name, investment_type, initial_amount, current_value, start_date, expected_return_rate, platform, notes, status, active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)''',
+                 ('Bitcoin', 'Crypto', 5000.00, 7250.00, '2024-03-10', 25.0, 'Binance', 'Cryptocurrency investment', 'active'))
+
+        c.execute('''INSERT INTO investments
+                    (name, investment_type, initial_amount, current_value, start_date, expected_return_rate, platform, notes, status, active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)''',
+                 ('High Yield Savings', 'Savings Account', 15000.00, 15450.00, '2024-01-01', 4.5, 'Marcus by Goldman Sachs', 'Emergency fund', 'active'))
+
+        c.execute('''INSERT INTO investments
+                    (name, investment_type, initial_amount, current_value, start_date, expected_return_rate, maturity_date, platform, notes, status, active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)''',
+                 ('S&P 500 ETF', 'ETF', 8000.00, 8960.00, '2024-04-01', 12.0, '2029-04-01', 'Vanguard', 'Index fund for retirement', 'active'))
+
+        c.execute('''INSERT INTO investments
+                    (name, investment_type, initial_amount, current_value, start_date, expected_return_rate, platform, notes, status, active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)''',
+                 ('Real Estate Crowdfunding', 'Real Estate', 3000.00, 2850.00, '2025-08-01', 8.0, 'Fundrise', 'Commercial property portfolio', 'active'))
+
+        # Investment transactions (for Apple Stock)
+        c.execute('''INSERT INTO investment_transactions
+                    (investment_id, transaction_type, amount, transaction_date, notes)
+                    VALUES (?, ?, ?, ?, ?)''',
+                 (1, 'deposit', 10000.00, '2024-06-15', 'Initial investment in AAPL'))
+
+        c.execute('''INSERT INTO investment_transactions
+                    (investment_id, transaction_type, amount, transaction_date, notes)
+                    VALUES (?, ?, ?, ?, ?)''',
+                 (1, 'return', 500.00, '2024-09-15', 'Q3 dividend payment'))
+
+        c.execute('''INSERT INTO investment_transactions
+                    (investment_id, transaction_type, amount, transaction_date, notes)
+                    VALUES (?, ?, ?, ?, ?)''',
+                 (1, 'deposit', 2000.00, '2024-10-01', 'Additional shares purchased'))
+
+        # Investment transactions (for Bitcoin)
+        c.execute('''INSERT INTO investment_transactions
+                    (investment_id, transaction_type, amount, transaction_date, notes)
+                    VALUES (?, ?, ?, ?, ?)''',
+                 (2, 'deposit', 5000.00, '2024-03-10', 'Initial BTC purchase'))
+
+        c.execute('''INSERT INTO investment_transactions
+                    (investment_id, transaction_type, amount, transaction_date, notes)
+                    VALUES (?, ?, ?, ?, ?)''',
+                 (2, 'return', 2250.00, '2025-11-01', 'Price appreciation'))
+
+        # Investment transactions (for High Yield Savings)
+        c.execute('''INSERT INTO investment_transactions
+                    (investment_id, transaction_type, amount, transaction_date, notes)
+                    VALUES (?, ?, ?, ?, ?)''',
+                 (3, 'deposit', 15000.00, '2024-01-01', 'Initial deposit'))
+
+        c.execute('''INSERT INTO investment_transactions
+                    (investment_id, transaction_type, amount, transaction_date, notes)
+                    VALUES (?, ?, ?, ?, ?)''',
+                 (3, 'return', 450.00, '2025-11-01', 'Interest earned (year to date)'))
+
         print("[OK] Demo data inserted")
 
     conn.commit()
