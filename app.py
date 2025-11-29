@@ -16,7 +16,9 @@ from routes import (
     reportes_bp,
     prestamos_bp,
     tarjetas_bp,
-    api_bp
+    api_bp,
+    cashback_bp,
+    investments_bp
 )
 
 # Create Flask application
@@ -34,6 +36,8 @@ app.register_blueprint(reportes_bp)
 app.register_blueprint(prestamos_bp)
 app.register_blueprint(tarjetas_bp)
 app.register_blueprint(api_bp)
+app.register_blueprint(cashback_bp)
+app.register_blueprint(investments_bp)
 
 
 @app.route('/')

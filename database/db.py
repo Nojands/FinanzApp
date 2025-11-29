@@ -141,6 +141,46 @@ def init_db():
                   mes_critico TEXT,
                   saldo_minimo REAL)''')
 
+    # Cashback table
+    c.execute('''CREATE TABLE IF NOT EXISTS cashback
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  source TEXT NOT NULL,
+                  amount REAL NOT NULL,
+                  date_earned TEXT NOT NULL,
+                  date_received TEXT,
+                  status TEXT DEFAULT 'pending',
+                  card_id INTEGER,
+                  category_id INTEGER,
+                  notes TEXT,
+                  active INTEGER DEFAULT 1,
+                  FOREIGN KEY (card_id) REFERENCES tarjetas_credito(id),
+                  FOREIGN KEY (category_id) REFERENCES categorias(id))''')
+
+    # Investments table
+    c.execute('''CREATE TABLE IF NOT EXISTS investments
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name TEXT NOT NULL,
+                  investment_type TEXT NOT NULL,
+                  initial_amount REAL NOT NULL,
+                  current_value REAL NOT NULL,
+                  start_date TEXT NOT NULL,
+                  expected_return_rate REAL DEFAULT 0.0,
+                  maturity_date TEXT,
+                  status TEXT DEFAULT 'active',
+                  platform TEXT,
+                  notes TEXT,
+                  active INTEGER DEFAULT 1)''')
+
+    # Investment transactions table (to track deposits, withdrawals, and returns)
+    c.execute('''CREATE TABLE IF NOT EXISTS investment_transactions
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  investment_id INTEGER NOT NULL,
+                  transaction_type TEXT NOT NULL,
+                  amount REAL NOT NULL,
+                  transaction_date TEXT NOT NULL,
+                  notes TEXT,
+                  FOREIGN KEY (investment_id) REFERENCES investments(id))''')
+
     # Add usuario_id column to all tables if it doesn't exist
     tablas = [
         'ingresos',
@@ -153,7 +193,10 @@ def init_db():
         'tarjetas_credito',
         'gastos_tdc',
         'categorias',
-        'simulaciones_historial'
+        'simulaciones_historial',
+        'cashback',
+        'investments',
+        'investment_transactions'
     ]
 
     for tabla in tablas:
